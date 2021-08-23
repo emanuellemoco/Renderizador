@@ -13,7 +13,6 @@ import gpu          # Simula os recursos de uma GPU
 
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#Polypoint2D
 def polypoint2D(point, colors):
-    """Função usada para renderizar Polypoint2D."""
     # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
     # de pontos x, y sempre na ordem. Assim point[0] é o valor da coordenada x do
     # primeiro ponto, point[1] o valor y do primeiro ponto. Já point[2] é a
@@ -25,9 +24,35 @@ def polypoint2D(point, colors):
     # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
     print("Polypoint2D : pontos = {0}".format(point)) # imprime no terminal pontos
     print("Polypoint2D : colors = {0}".format(colors)) # imprime no terminal as cores
+
     # Exemplo:
-    gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
-    # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+    # gpu.GPU.set_pixel(3, 1, 0, 255, 255) # altera um pixel da imagem (u, v, r, g, b)
+    # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255) 
+    
+    # Para cada ponto, pinta o pixel de acordo (convertendo as coordenadas para int) 
+    for i in range(0,len(point),2):
+        gpu.GPU.set_pixel(int(point[i]), int(point[i+1]), colors["emissiveColor"][0]*255, colors["emissiveColor"][1]*255, colors["emissiveColor"][2]*255)   
+    
+
+def drawLine(lineSegments, colors):
+    #cria uma lista com as coordenadas X e outra para as coordenadas Y
+    u_list = lineSegments[::2]
+    v_list = lineSegments[1::2]
+    if u_list[0] > u_list[1]:    
+        v = v_list[1]
+    else:
+        v = v_list[0]
+    #calcula o coeficiente linear
+    m = (v_list[1] - v_list[0]) / (u_list[1] - u_list[0]) 
+    for i in range(int(min(u_list)),int(max(u_list))):
+
+        #Arredonda V
+        gpu.GPU.set_pixel(i, int(v), colors["emissiveColor"][0]*255, colors["emissiveColor"][1]*255, colors["emissiveColor"][2]*255)   
+        
+        #Adiciona o coef angular em V para pintar o prox ponto
+        v+= m
+
+
 
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#Polyline2D
 def polyline2D(lineSegments, colors):
@@ -41,13 +66,36 @@ def polyline2D(lineSegments, colors):
     # vira uma quantidade par de valores.
     # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polyline2D
     # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
-
+    
+    # Faz a função de desenhar a linha para cada linha no lineSegments    
+    for i in range(0,int(len(lineSegments)-2),2):
+        drawLine(lineSegments[i:i+4], colors)
+    
     print("Polyline2D : lineSegments = {0}".format(lineSegments)) # imprime no terminal
     print("Polyline2D : colors = {0}".format(colors)) # imprime no terminal as cores
     # Exemplo:
     pos_x = gpu.GPU.width//2
     pos_y = gpu.GPU.height//2
-    gpu.GPU.set_pixel(pos_x, pos_y, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
+    # gpu.GPU.set_pixel(pos_x, pos_y, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
+
+
+def line_eq(x1,y1,x0,y0,x,y):
+    #Equacao da reta
+    L = (y1-y0) * x - (x1 - x0) * y + (x1 - x0) * y0 - (y1 - y0) * x0
+    return L >= 0
+    
+
+def inside(x_v, y_v, x, y):
+    #Funcao que checa se um ponto esta dentro. 
+    # Se o ponto checado em l1, l2 e l3 por positivo, ele esta dentro do triangulo e deve ser pintado
+    for i in range(0,len(x_v),3):
+        l1 = line_eq(x_v[i+1],y_v[i+1],x_v[i],y_v[i], x,y)
+        l2 = line_eq(x_v[i+2],y_v[i+2],x_v[i+1],y_v[i+1], x,y)
+        l3 = line_eq(x_v[i],y_v[i],x_v[i+2],y_v[i+2], x,y)
+        if l1 and l2 and l3:
+            return True
+    return False
+    
 
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#TriangleSet2D
 def triangleSet2D(vertices, colors):
@@ -61,8 +109,18 @@ def triangleSet2D(vertices, colors):
     # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
     print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
     print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
-    # Exemplo:
-    gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem (u, v, r, g, b)
+    # # Exemplo:
+    # gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem (u, v, r, g, b)
+
+    x_list = vertices[::2]
+    y_list = vertices[1::2]
+
+    for i in range(int(min(x_list)), int(max(x_list))):
+        for j in range(int(min(y_list)), int(max(y_list))):
+            if inside(x_list, y_list, i+0.5,j+0.5):
+                gpu.GPU.set_pixel(i, j, colors["emissiveColor"][0]*255, colors["emissiveColor"][1]*255, colors["emissiveColor"][2]*255)
+
+
 
 def triangleSet(point, colors):
     """Função usada para renderizar TriangleSet."""
