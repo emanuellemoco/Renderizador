@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
 """
@@ -35,24 +34,68 @@ def polypoint2D(point, colors):
     
 
 def drawLine(lineSegments, colors):
+    # Ideia do Código  de: http://rosettacode.org/wiki/Bitmap/Bresenham%27s_line_algorithm#Python
+
     #cria uma lista com as coordenadas X e outra para as coordenadas Y
-    u_list = lineSegments[::2]
-    v_list = lineSegments[1::2]
-    if u_list[0] > u_list[1]:    
-        v = v_list[1]
-    else:
-        v = v_list[0]
-    #calcula o coeficiente linear
-    m = (v_list[1] - v_list[0]) / (u_list[1] - u_list[0]) 
-    for i in range(int(min(u_list)),int(max(u_list))):
+    u_list = (lineSegments[::2])
+    v_list = (lineSegments[1::2])
 
-        #Arredonda V
-        gpu.GPU.set_pixel(i, int(v), colors["emissiveColor"][0]*255, colors["emissiveColor"][1]*255, colors["emissiveColor"][2]*255)   
+    u_list = list(map(int, u_list))
+    v_list = list(map(int, v_list))
+
+    sx = -1 if u_list[0] > u_list[1] else 1       # if x0 > x1 
+    sy = -1 if v_list[0] > v_list[1] else 1       # if y0 > y1 
+    
+    u, v = u_list[0], v_list[0]
+
+    # if u_list[0] > u_list[1]:    
+    #     v = v_list[1]
+    # else:
+    #     v = v_list[0]
         
-        #Adiciona o coef angular em V para pintar o prox ponto
-        v+= m
+    # if v_list[0] > v_list[1]:    
+    #     u = u_list[1]
+    # else:
+    #     u = u_list[0]
+    #calcula o coeficiente 
+    dx = abs(u_list[1] - u_list[0])
+    dy = abs(v_list[1] - v_list[0])
+    m = int ((dy) / (dx)) 
+    if dx > dy: 
+        err = dx / 2.0
+        while u != u_list[1]:
+            gpu.GPU.set_pixel(u, v, colors["emissiveColor"][0]*255, colors["emissiveColor"][1]*255, colors["emissiveColor"][2]*255)   
+            err -= dy
+            if err < 0:
+                v += sy
+                err += dx
+            u += sx
 
+    else:
+        err = dy / 2.0
+        while v != v_list[1]:
+            gpu.GPU.set_pixel(u, v, colors["emissiveColor"][0]*255, colors["emissiveColor"][1]*255, colors["emissiveColor"][2]*255)   
+            err -= dx
+            if err < 0:
+                u += sx
+                err += dy
+            u += sy
 
+    # if dx > dy: 
+    #     for i in range(int(min(u_list)),int(max(u_list))):
+    #         #Arredonda V
+    #         gpu.GPU.set_pixel(i, v, colors["emissiveColor"][0]*255, colors["emissiveColor"][1]*255, colors["emissiveColor"][2]*255)   
+        
+    #         #Adiciona o coef angular em V para pintar o prox ponto
+    #         v+= m
+    # else:
+    #     for i in range(int(min(v_list)),int(max(v_list))):
+    #         print(u)
+    #         #Arredonda U
+    #         gpu.GPU.set_pixel(int(u), i, colors["emissiveColor"][0]*255, colors["emissiveColor"][1]*255, colors["emissiveColor"][2]*255)   
+        
+    #         #Adiciona o coef angular em V para pintar o prox ponto
+    #         u+= m
 
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#Polyline2D
 def polyline2D(lineSegments, colors):
