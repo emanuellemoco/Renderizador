@@ -73,13 +73,14 @@ def drawLine(lineSegments, colors):
 
     else:
         err = dy / 2.0
+        
         while v != v_list[1]:
             gpu.GPU.set_pixel(u, v, colors["emissiveColor"][0]*255, colors["emissiveColor"][1]*255, colors["emissiveColor"][2]*255)   
             err -= dx
             if err < 0:
                 u += sx
                 err += dy
-            u += sy
+            v += sy
 
     # if dx > dy: 
     #     for i in range(int(min(u_list)),int(max(u_list))):
