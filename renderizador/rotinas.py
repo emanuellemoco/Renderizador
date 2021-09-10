@@ -64,7 +64,6 @@ def drawLine(lineSegments, colors):
     #calcula o coeficiente 
     dx = abs(u_list[1] - u_list[0])
     dy = abs(v_list[1] - v_list[0])
-    m = int ((dy) / (dx)) 
     if dx > dy: 
         err = dx / 2.0
         while u != u_list[1]:
