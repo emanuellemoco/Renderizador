@@ -4,11 +4,11 @@
 """
 Biblioteca Gráfica / Graphics Library.
 
-Desenvolvido por: <SEU NOME AQUI>
+Desenvolvido por: Emanuelle e Leonardo 
 Disciplina: Computação Gráfica
 Data:
 """
-
+import numpy as np
 import gpu          # Simula os recursos de uma GPU
 
 class GL:
@@ -26,6 +26,8 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
+        GL.p_matrix = np.matrix([[near/width, 0, 0, 0],[0, near/height, 0,0], [0,0, -(far+near)/(far-near), (-2 * far * near)/(far-near)], [0, 0, -1, 0]])
+        # p_matrix 4,4
 
     @staticmethod
     def triangleSet(point, colors):
@@ -47,6 +49,25 @@ class GL:
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+
+        # Para cada triangulo
+        for i in range(0,len(point),9):
+            if i+8>len(point):
+                break
+            point3d_1 = np.array([point[i],point[i+1],point[i+2],1])
+            point3d_2 = np.array([point[i+3],point[i+4],point[i+5],1])
+            point3d_3 = np.array([point[i+6],point[i+7],point[i+8],1])
+            point_1 = GL.p_matrix.dot(point3d_1)
+            point_2 = GL.p_matrix.dot(point3d_2)
+            point_3 = GL.p_matrix.dot(point3d_3)
+
+            gpu.GPU.draw_pixels([int(point_1[0]), int(point_1[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
+            gpu.GPU.draw_pixels([int(point_2[0]), int(point_2[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
+            gpu.GPU.draw_pixels([int(point_3[0]), int(point_3[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
+
+
+    
+
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
