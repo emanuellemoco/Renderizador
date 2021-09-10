@@ -10,6 +10,10 @@ Data:
 
 import gpu          # Simula os recursos de uma GPU
 
+#################################################################################
+# NÃO USAR MAIS ESSE ARQUIVO. AS ROTINAS DEVEM SER IMPLEMENTADAS AGORA NO gl.GL #
+#################################################################################
+
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#Polypoint2D
 def polypoint2D(point, colors):
     # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
