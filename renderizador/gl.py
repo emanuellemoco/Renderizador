@@ -10,6 +10,7 @@ Data:
 """
 import numpy as np
 import gpu          # Simula os recursos de uma GPU
+import math
 
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
@@ -26,7 +27,6 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
-        GL.p_matrix = np.matrix([[near/width, 0, 0, 0],[0, near/height, 0,0], [0,0, -(far+near)/(far-near), (-2 * far * near)/(far-near)], [0, 0, -1, 0]])
         # p_matrix 4,4
 
     @staticmethod
@@ -54,16 +54,71 @@ class GL:
         for i in range(0,len(point),9):
             if i+8>len(point):
                 break
-            point3d_1 = np.array([point[i],point[i+1],point[i+2],1])
-            point3d_2 = np.array([point[i+3],point[i+4],point[i+5],1])
-            point3d_3 = np.array([point[i+6],point[i+7],point[i+8],1])
-            point_1 = GL.p_matrix.dot(point3d_1)
-            point_2 = GL.p_matrix.dot(point3d_2)
-            point_3 = GL.p_matrix.dot(point3d_3)
+            for j in range(i, i+3):
+                point3d = np.matrix([
+                    [point[j],point[j+1],point[j+2],1]
+                ])  ##==> GL.world * isso
+                world_point = point3d.dot(GL.world)
+                #Identificando as coordenadas ortonormais (matrix Look-At)
 
-            gpu.GPU.draw_pixels([int(point_1[0]), int(point_1[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
-            gpu.GPU.draw_pixels([int(point_2[0]), int(point_2[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
-            gpu.GPU.draw_pixels([int(point_3[0]), int(point_3[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
+                
+
+                # ignorando o quarto valor
+                eye = np.matrix([
+                    [GL.position[0,0], GL.position[0,1], GL.position[0,2]]
+                ])
+                world_point3d = np.matrix([
+                    [world_point[0,0], world_point[0,1], world_point[0,2]]
+                ])       
+                # print("world_point3d: ", world_point3d)
+                # print("position: ", position)
+                orientation = np.matrix([
+                [GL.orientation[0], GL.orientation[1], GL.orientation[2]]
+                ]) 
+                # orientation = np.matrix([[0, 1, 0]]) 
+                # print("orientation ", orientation)
+
+                w = np.divide(np.subtract(world_point3d, eye) , np.abs(np.subtract(world_point3d, eye))) #
+            
+                u = np.divide(np.cross(w, orientation)  , np.abs(np.cross(w, orientation))) 
+                print("u ", u)
+                v = np.divide(np.cross(u, w)  , np.abs(np.cross(u, w)) ) 
+                # print("v ", v)
+
+                #ARRUMAR AQUI
+                #Transformação de Look-At
+                lookAt = np.matrix([
+                    [u[0,0], v[0,0], - w[0,0], eye[0,0]],
+                    [u[0,1], v[0,1], -w[0,1],  eye[0,1]],
+                    [u[0,2], v[0,2], -w[0,2],  eye[0,2]],
+                    [0, 0, 0, 1],
+                ])
+                #A transformação de Look-At é o inverso da matriz Look-At
+                lookAt_tranform = np.linalg.inv(lookAt)
+                # print("lookAt_tranform: ", lookAt_tranform)
+
+                #Coordenadas do Mundo -> Coordenadas Camera
+                camera_point = world_point.dot(lookAt_tranform)
+
+                #Transformações Perspectivas
+                perspective = camera_point.dot(GL.p_matrix )
+
+                #Divisão homogenea para fazer a normalização:
+                perspective_normalized = perspective/perspective[0,3]
+
+                # print("perspective_normalized: ", perspective_normalized)
+            
+            
+
+        
+            #Translacao 
+
+            #World (multiplicar a matriz )
+            
+
+            #gpu.GPU.draw_pixels([int(point_1[0]), int(point_1[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
+            #gpu.GPU.draw_pixels([int(point_2[0]), int(point_2[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
+            #gpu.GPU.draw_pixels([int(point_3[0]), int(point_3[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
 
 
     
@@ -81,6 +136,23 @@ class GL:
         print("position = {0} ".format(position), end='')
         print("orientation = {0} ".format(orientation), end='')
         print("fieldOfView = {0} ".format(fieldOfView))
+        ####### remover 4 linhas a cima 
+
+        fovy = 2 * math.atan(math.tan(fieldOfView / 2) * GL.height / math.sqrt(GL.height ** 2 + GL.width ** 2))
+
+        GL.position = np.matrix([
+            [position[0], position[1], position[2], 1]
+        ]) 
+        GL.orientation = orientation
+
+        # GL.orientation = np.matrix([
+        #     [orientation[0], orientation[1], orientation[2], orientation[3]]
+        # ]) 
+
+    
+        top = GL.near * fovy 
+        GL.p_matrix = np.matrix([[GL.near/GL.width, 0, 0, 0],[0, GL.near/top, 0,0], [0,0, -(GL.far+GL.near)/(GL.far-GL.near), (-2 * GL.far * GL.near)/(GL.far-GL.near)], [0, 0, -1, 0]])
+
 
     @staticmethod
     def transform_in(translation, scale, rotation):
@@ -102,6 +174,57 @@ class GL:
         if rotation:
             print("rotation = {0} ".format(rotation), end='') # imprime no terminal
         print("")
+    
+        # O Braga nos explicou como fazer essa parte
+
+        scale = np.matrix([
+            [scale[0], 0, 0 ,0],
+            [0, scale[1], 0, 0],
+            [0, 0, scale[2], 0],
+            [0, 0, 0, 1]
+        ])
+        
+
+
+        translation = np.matrix([
+            [1, 0, 0, translation[0]],
+            [0, 1, 0, translation[1]],
+            [1, 0, 1, translation[2]],
+            [0, 0, 0, 1]
+        ])
+
+        #Matrix de Rotações: https://en.wikipedia.org/wiki/Rotation_matrix
+        rotationX = np.matrix([
+            [1, 0, 0, 0],
+            [0, math.cos(rotation[3]), -math.sin(rotation[3]), 0],
+            [0, math.sin(rotation[3]), -math.cos(rotation[3]), 0],
+            [0, 0, 0, 1]
+        ]) 
+
+        rotationY = np.matrix([
+            [math.cos(rotation[3]), 0, math.sin(rotation[3]), 0],
+            [0, 1, 0, 0],
+            [-math.sin(rotation[3]), 0, math.sin(rotation[3]), 0],
+            [0, 0, 0, 1]
+        ])
+        
+        rotationZ = np.matrix([
+            [math.cos(rotation[3]), -math.sin(rotation[3]), 0, 0],
+            [math.sin(rotation[3]), math.cos(rotation[3]), 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ])
+
+        if rotation[0] != 0:
+            GL.world = scale.dot(rotationX).dot(translation)
+        elif rotation[1] != 0:
+            GL.world = scale.dot(rotationY).dot(translation)
+        elif rotation[2] != 0:
+            GL.world = scale.dot(rotationZ).dot(translation)
+        else:
+            GL.world = scale.dot(translation)
+        
+
 
     @staticmethod
     def transform_out():
