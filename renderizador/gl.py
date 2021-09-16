@@ -50,6 +50,8 @@ class GL:
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
 
+
+        
         # Para cada triangulo
         for i in range(0,len(point),9):
             if i+8>len(point):
@@ -60,45 +62,34 @@ class GL:
                 ])  ##==> GL.world * isso
                 world_point = point3d.dot(GL.world)
                 #Identificando as coordenadas ortonormais (matrix Look-At)
+                print(world_point)
 
-                
-
-                # ignorando o quarto valor
-                eye = np.matrix([
-                    [GL.position[0,0], GL.position[0,1], GL.position[0,2]]
-                ])
-                world_point3d = np.matrix([
-                    [world_point[0,0], world_point[0,1], world_point[0,2]]
-                ])       
-                # print("world_point3d: ", world_point3d)
-                # print("position: ", position)
-                orientation = np.matrix([
-                [GL.orientation[0], GL.orientation[1], GL.orientation[2]]
-                ]) 
-                # orientation = np.matrix([[0, 1, 0]]) 
+                eye = GL.position
+                # print("wdd,d,d,d", GL.position)
                 # print("orientation ", orientation)
 
-                w = np.divide(np.subtract(world_point3d, eye) , np.abs(np.subtract(world_point3d, eye))) #
-            
-                u = np.divide(np.cross(w, orientation)  , np.abs(np.cross(w, orientation))) 
-                print("u ", u)
-                v = np.divide(np.cross(u, w)  , np.abs(np.cross(u, w)) ) 
-                # print("v ", v)
-
-                #ARRUMAR AQUI
-                #Transformação de Look-At
-                lookAt = np.matrix([
-                    [u[0,0], v[0,0], - w[0,0], eye[0,0]],
-                    [u[0,1], v[0,1], -w[0,1],  eye[0,1]],
-                    [u[0,2], v[0,2], -w[0,2],  eye[0,2]],
-                    [0, 0, 0, 1],
+                #matriz camera translação
+                camera_translation = np.matrix([
+                    [1, 0, 0, GL.position[0,0]],
+                    [0, 1, 0, GL.position[0,1]],
+                    [0, 0, 1, GL.position[0,2]],
+                    [0, 0, 0, 1]
                 ])
-                #A transformação de Look-At é o inverso da matriz Look-At
-                lookAt_tranform = np.linalg.inv(lookAt)
-                # print("lookAt_tranform: ", lookAt_tranform)
+
+                # camera_rotation = np.matrix([
+                #     [1, 0, 0, GL.orientation[0]],
+                #     [0, 1, 0, GL.orientation[1]],
+                #     [0, 0, 1, GL.orientation[2]],
+                #     [0, 0, 0, 1]
+                # ])
+
+                #(T.R)⁻1 = R⁻1 . T⁼-1
+                x_matrix = np.linalg.inv(camera_translation).dot(np.linalg.inv(camera_rotation))
+                # print("-> ", x_matrix)
 
                 #Coordenadas do Mundo -> Coordenadas Camera
-                camera_point = world_point.dot(lookAt_tranform)
+                camera_point = world_point.dot(x_matrix)
+                #print("point camera ", camera_point)
 
                 #Transformações Perspectivas
                 perspective = camera_point.dot(GL.p_matrix )
@@ -106,28 +97,29 @@ class GL:
                 #Divisão homogenea para fazer a normalização:
                 perspective_normalized = perspective/perspective[0,3]
 
-                # print("perspective_normalized: ", perspective_normalized)
+                print("perspective_normalized: ", perspective_normalized)
+                gpu.GPU.draw_pixels([int(perspective_normalized[0,0]), int(perspective_normalized[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+
             
             
 
-        
-            #Translacao 
-
-            #World (multiplicar a matriz )
             
 
             #gpu.GPU.draw_pixels([int(point_1[0]), int(point_1[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
             #gpu.GPU.draw_pixels([int(point_2[0]), int(point_2[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
             #gpu.GPU.draw_pixels([int(point_3[0]), int(point_3[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
 
+        
+            #Translacao 
 
-    
+            #World (multiplicar a matriz )
+
 
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
         """Função usada para renderizar (na verdade coletar os dados) de Viewpoint."""
-        # Na função de viewpoint você receberá a posição, orientação e campo de visão da
+        # Na função de viewpoint você receberá a posição, e campo de visão da
         # câmera virtual. Use esses dados para poder calcular e criar a matriz de projeção
         # perspectiva para poder aplicar nos pontos dos objetos geométricos.
 
