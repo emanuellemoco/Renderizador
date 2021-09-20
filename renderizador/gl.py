@@ -11,7 +11,11 @@ Data:
 import numpy as np
 import gpu          # Simula os recursos de uma GPU
 import math
-
+from utils import (
+    line_eq, 
+    inside,
+    getRotationMatrix
+)
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
 
@@ -27,6 +31,13 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
+        GL.screen_matrix = np.matrix([
+            [width/2, 0, 0, width/2],
+            [0, -height/2, 0, height/2],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ]) 
+        # print("screen_matrix: ",screen_matrix)
         # p_matrix 4,4
 
     @staticmethod
@@ -56,17 +67,15 @@ class GL:
         for i in range(0,len(point),9):
             if i+8>len(point):
                 break
+            triangle_2d_coord = []
             for j in range(i, i+3):
                 point3d = np.matrix([
                     [point[j],point[j+1],point[j+2],1]
-                ])  ##==> GL.world * isso
+                ])  
+                print(f"X : {point[j]}, Y : {point[j+1]}, Z : {point[j+2]}")
                 world_point = point3d.dot(GL.world)
                 #Identificando as coordenadas ortonormais (matrix Look-At)
-                print(world_point)
-
-                eye = GL.position
-                # print("wdd,d,d,d", GL.position)
-                # print("orientation ", orientation)
+                print("world_point: ",world_point)
 
                 #matriz camera translação
                 camera_translation = np.matrix([
@@ -76,34 +85,39 @@ class GL:
                     [0, 0, 0, 1]
                 ])
 
-                # camera_rotation = np.matrix([
-                #     [1, 0, 0, GL.orientation[0]],
-                #     [0, 1, 0, GL.orientation[1]],
-                #     [0, 0, 1, GL.orientation[2]],
-                #     [0, 0, 0, 1]
-                # ])
+                camera_rotation = getRotationMatrix(GL.orientation)
 
-                #(T.R)⁻1 = R⁻1 . T⁼-1
+                print("camera_rotation: ",camera_rotation)
+                #Transformação de Look-at           (T.R)⁻1 = R⁻1 . T⁼-1
                 x_matrix = np.linalg.inv(camera_translation).dot(np.linalg.inv(camera_rotation))
                 # print("-> ", x_matrix)
-
+                #print("x_matrix", x_matrix)
                 #Coordenadas do Mundo -> Coordenadas Camera
                 camera_point = world_point.dot(x_matrix)
-                #print("point camera ", camera_point)
+                print("point camera ", camera_point)
+
+                teste = np.matrix ([[-1,-1,-8,1]])
 
                 #Transformações Perspectivas
-                perspective = camera_point.dot(GL.p_matrix )
+                perspective = camera_point.dot(GL.p_matrix)
 
                 #Divisão homogenea para fazer a normalização:
                 perspective_normalized = perspective/perspective[0,3]
 
+                print("--------------\n")
+                print("perspective: ", perspective)
                 print("perspective_normalized: ", perspective_normalized)
-                gpu.GPU.draw_pixels([int(perspective_normalized[0,0]), int(perspective_normalized[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
 
-            
-            
 
-            
+                #Tensformação para coordenadas da tela
+                screen_point = perspective_normalized.dot(GL.screen_matrix)
+                print("-> screen_point ", screen_point)
+                #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+                triangle_2d_coord.append(screen_point[0,0])
+                triangle_2d_coord.append(screen_point[0,1])
+
+            GL.fill_triangle(triangle_2d_coord, colors)
+
 
             #gpu.GPU.draw_pixels([int(point_1[0]), int(point_1[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
             #gpu.GPU.draw_pixels([int(point_2[0]), int(point_2[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
@@ -113,6 +127,25 @@ class GL:
             #Translacao 
 
             #World (multiplicar a matriz )
+        
+    @staticmethod
+    def fill_triangle(vertices, colors):
+        """Função para rasterizar os pixels dentro do triângulo """
+        print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
+        print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
+        # # Exemplo:
+        # gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem (u, v, r, g, b)
+
+        x_list = vertices[::2]
+        y_list = vertices[1::2]
+
+        for i in range(int(min(x_list)), int(max(x_list))):
+            for j in range(int(min(y_list)), int(max(y_list))):
+                if inside(x_list, y_list, i+0.5,j+0.5):
+                    #gpu.GPU.draw_pixels([i,j], colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255)  # altera pixel
+                    gpu.GPU.draw_pixels([i,j], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
+
+
 
 
 
@@ -136,14 +169,18 @@ class GL:
             [position[0], position[1], position[2], 1]
         ]) 
         GL.orientation = orientation
+        
+        top = GL.near * math.tan(fovy) 
+        aspect = GL.width / GL.height
+        right  = top * aspect
+        #matrix de perspectiva
+        GL.p_matrix = np.matrix([
+            [GL.near/right, 0, 0, 0],
+            [0, GL.near/top, 0,0], 
+            [0,0, -(GL.far+GL.near)/(GL.far-GL.near), (-2 * GL.far * GL.near)/(GL.far-GL.near)], 
+            [0, 0, -1, 0]
+            ])
 
-        # GL.orientation = np.matrix([
-        #     [orientation[0], orientation[1], orientation[2], orientation[3]]
-        # ]) 
-
-    
-        top = GL.near * fovy 
-        GL.p_matrix = np.matrix([[GL.near/GL.width, 0, 0, 0],[0, GL.near/top, 0,0], [0,0, -(GL.far+GL.near)/(GL.far-GL.near), (-2 * GL.far * GL.near)/(GL.far-GL.near)], [0, 0, -1, 0]])
 
 
     @staticmethod
@@ -168,8 +205,7 @@ class GL:
         print("")
     
         # O Braga nos explicou como fazer essa parte
-
-        scale = np.matrix([
+        scale_matrix = np.matrix([
             [scale[0], 0, 0 ,0],
             [0, scale[1], 0, 0],
             [0, 0, scale[2], 0],
@@ -177,45 +213,19 @@ class GL:
         ])
         
 
-
-        translation = np.matrix([
+        translation_matrix = np.matrix([
             [1, 0, 0, translation[0]],
             [0, 1, 0, translation[1]],
             [1, 0, 1, translation[2]],
             [0, 0, 0, 1]
         ])
 
-        #Matrix de Rotações: https://en.wikipedia.org/wiki/Rotation_matrix
-        rotationX = np.matrix([
-            [1, 0, 0, 0],
-            [0, math.cos(rotation[3]), -math.sin(rotation[3]), 0],
-            [0, math.sin(rotation[3]), -math.cos(rotation[3]), 0],
-            [0, 0, 0, 1]
-        ]) 
-
-        rotationY = np.matrix([
-            [math.cos(rotation[3]), 0, math.sin(rotation[3]), 0],
-            [0, 1, 0, 0],
-            [-math.sin(rotation[3]), 0, math.sin(rotation[3]), 0],
-            [0, 0, 0, 1]
-        ])
         
-        rotationZ = np.matrix([
-            [math.cos(rotation[3]), -math.sin(rotation[3]), 0, 0],
-            [math.sin(rotation[3]), math.cos(rotation[3]), 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]
-        ])
+        rotation_matrix = getRotationMatrix(rotation)
+        GL.world = scale_matrix.dot(rotation_matrix).dot(translation_matrix)
 
-        if rotation[0] != 0:
-            GL.world = scale.dot(rotationX).dot(translation)
-        elif rotation[1] != 0:
-            GL.world = scale.dot(rotationY).dot(translation)
-        elif rotation[2] != 0:
-            GL.world = scale.dot(rotationZ).dot(translation)
-        else:
-            GL.world = scale.dot(translation)
-        
+
+        # GL.world = scale.dot(translation)  # PRECISA DISSO? ??? SE NÃO TIVER ROTAÇÃO E MULTIPLICAR POR ELA MESMA DÁ ERRO? BRAGA HElp
 
 
     @staticmethod
