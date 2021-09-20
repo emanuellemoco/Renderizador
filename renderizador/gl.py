@@ -11,10 +11,9 @@ Data:
 import numpy as np
 import gpu          # Simula os recursos de uma GPU
 import math
-from utils import (
-    line_eq, 
+from utils import ( 
     inside,
-    getRotationMatrix
+    getRotationMatrix,
 )
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
@@ -32,13 +31,11 @@ class GL:
         GL.near = near
         GL.far = far
         GL.screen_matrix = np.matrix([
-            [width/2, 0, 0, width/2],
-            [0, -height/2, 0, height/2],
+            [GL.width/2, 0, 0, GL.width/2],
+            [0, -GL.height/2, 0, GL.height/2],
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ]) 
-        # print("screen_matrix: ",screen_matrix)
-        # p_matrix 4,4
 
     @staticmethod
     def triangleSet(point, colors):
@@ -55,8 +52,8 @@ class GL:
         # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
-        print("TriangleSet : colors = {0}".format(colors)) # imprime no terminal as cores
+        # print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
+        # print("TriangleSet : colors = {0}".format(colors)) # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
@@ -68,14 +65,15 @@ class GL:
             if i+8>len(point):
                 break
             triangle_2d_coord = []
-            for j in range(i, i+3):
-                point3d = np.matrix([
-                    [point[j],point[j+1],point[j+2],1]
-                ])  
-                print(f"X : {point[j]}, Y : {point[j+1]}, Z : {point[j+2]}")
-                world_point = point3d.dot(GL.world)
+            for j in range(i, i+9,3):
+                print("==========> PONTO ESPECIFICO", point[j:j+3])
+                # point3d = np.matrix([
+                #     [point[j],point[j+1],point[j+2],1]
+                # ])  
+                point3d = np.matrix([[point[j]], [point[j+1]], [point[j+2]], [1]])
+                world_point = GL.world.dot(point3d)
                 #Identificando as coordenadas ortonormais (matrix Look-At)
-                print("world_point: ",world_point)
+                # print("world_point: ",world_point)
 
                 #matriz camera translação
                 camera_translation = np.matrix([
@@ -87,34 +85,27 @@ class GL:
 
                 camera_rotation = getRotationMatrix(GL.orientation)
 
-                print("camera_rotation: ",camera_rotation)
                 #Transformação de Look-at           (T.R)⁻1 = R⁻1 . T⁼-1
-                x_matrix = np.linalg.inv(camera_translation).dot(np.linalg.inv(camera_rotation))
-                # print("-> ", x_matrix)
-                #print("x_matrix", x_matrix)
+                x_matrix = np.linalg.inv(camera_rotation).dot(np.linalg.inv(camera_translation))
                 #Coordenadas do Mundo -> Coordenadas Camera
-                camera_point = world_point.dot(x_matrix)
-                print("point camera ", camera_point)
-
-                teste = np.matrix ([[-1,-1,-8,1]])
+                camera_point = x_matrix.dot(world_point)
 
                 #Transformações Perspectivas
-                perspective = camera_point.dot(GL.p_matrix)
+                perspective = GL.p_matrix.dot(camera_point)
 
                 #Divisão homogenea para fazer a normalização:
-                perspective_normalized = perspective/perspective[0,3]
-
-                print("--------------\n")
-                print("perspective: ", perspective)
-                print("perspective_normalized: ", perspective_normalized)
+                perspective_normalized = perspective/perspective[3][0]
+                # perspective_normalized = np.divide(perspective, perspective[3][0])
 
 
                 #Tensformação para coordenadas da tela
-                screen_point = perspective_normalized.dot(GL.screen_matrix)
-                print("-> screen_point ", screen_point)
+                screen_point = GL.screen_matrix.dot(perspective_normalized)
+                # screen_point = screen_point/2 #somente para teste
+                print("------- screen_point: ",screen_point)
                 #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
                 triangle_2d_coord.append(screen_point[0,0])
-                triangle_2d_coord.append(screen_point[0,1])
+                triangle_2d_coord.append(screen_point[1,0])
+            print("-----------------------------------------------triangle coord", triangle_2d_coord)
 
             GL.fill_triangle(triangle_2d_coord, colors)
 
@@ -130,19 +121,24 @@ class GL:
         
     @staticmethod
     def fill_triangle(vertices, colors):
+        print(GL.width, GL.height, "W H")
         """Função para rasterizar os pixels dentro do triângulo """
-        print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
-        print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
+        # print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
+        # print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
         # # Exemplo:
         # gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem (u, v, r, g, b)
 
         x_list = vertices[::2]
         y_list = vertices[1::2]
+        print("x_list ", x_list)
+        print("y_list ", y_list)
 
-        for i in range(int(min(x_list)), int(max(x_list))):
-            for j in range(int(min(y_list)), int(max(y_list))):
+
+
+        for j in range(int(min(x_list)), int(max(x_list))):
+            for i in range(int(min(y_list)), int(max(y_list))):
                 if inside(x_list, y_list, i+0.5,j+0.5):
-                    #gpu.GPU.draw_pixels([i,j], colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255)  # altera pixel
+                    #print("i, j: ", i, j)
                     gpu.GPU.draw_pixels([i,j], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
 
 
@@ -157,11 +153,11 @@ class GL:
         # perspectiva para poder aplicar nos pontos dos objetos geométricos.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Viewpoint : ", end='')
-        print("position = {0} ".format(position), end='')
-        print("orientation = {0} ".format(orientation), end='')
-        print("fieldOfView = {0} ".format(fieldOfView))
-        ####### remover 4 linhas a cima 
+        # print("Viewpoint : ", end='')
+        # print("position = {0} ".format(position), end='')
+        # print("orientation = {0} ".format(orientation), end='')
+        # print("fieldOfView = {0} ".format(fieldOfView))
+        # ####### remover 4 linhas a cima 
 
         fovy = 2 * math.atan(math.tan(fieldOfView / 2) * GL.height / math.sqrt(GL.height ** 2 + GL.width ** 2))
 
@@ -182,7 +178,6 @@ class GL:
             ])
 
 
-
     @staticmethod
     def transform_in(translation, scale, rotation):
         """Função usada para renderizar (na verdade coletar os dados) de Transform."""
@@ -195,14 +190,14 @@ class GL:
         # modelos do mundo em alguma estrutura de pilha.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Transform : ", end='')
-        if translation:
-            print("translation = {0} ".format(translation), end='') # imprime no terminal
-        if scale:
-            print("scale = {0} ".format(scale), end='') # imprime no terminal
-        if rotation:
-            print("rotation = {0} ".format(rotation), end='') # imprime no terminal
-        print("")
+        # print("Transform : ", end='')
+        # if translation:
+        #     print("translation = {0} ".format(translation), end='') # imprime no terminal
+        # if scale:
+        #     print("scale = {0} ".format(scale), end='') # imprime no terminal
+        # if rotation:
+        #     print("rotation = {0} ".format(rotation), end='') # imprime no terminal
+        # print("")
     
         # O Braga nos explicou como fazer essa parte
         scale_matrix = np.matrix([
@@ -212,18 +207,17 @@ class GL:
             [0, 0, 0, 1]
         ])
         
-
         translation_matrix = np.matrix([
             [1, 0, 0, translation[0]],
             [0, 1, 0, translation[1]],
-            [1, 0, 1, translation[2]],
+            [0, 0, 1, translation[2]],
             [0, 0, 0, 1]
         ])
-
         
         rotation_matrix = getRotationMatrix(rotation)
-        GL.world = scale_matrix.dot(rotation_matrix).dot(translation_matrix)
+        GL.world = translation_matrix.dot(rotation_matrix).dot(scale_matrix)
 
+        
 
         # GL.world = scale.dot(translation)  # PRECISA DISSO? ??? SE NÃO TIVER ROTAÇÃO E MULTIPLICAR POR ELA MESMA DÁ ERRO? BRAGA HElp
 
