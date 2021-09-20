@@ -56,7 +56,7 @@ class GL:
         # print("TriangleSet : colors = {0}".format(colors)) # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        # gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
 
 
         
@@ -66,7 +66,6 @@ class GL:
                 break
             triangle_2d_coord = []
             for j in range(i, i+9,3):
-                print("==========> PONTO ESPECIFICO", point[j:j+3])
                 # point3d = np.matrix([
                 #     [point[j],point[j+1],point[j+2],1]
                 # ])  
@@ -101,11 +100,9 @@ class GL:
                 #Tensformação para coordenadas da tela
                 screen_point = GL.screen_matrix.dot(perspective_normalized)
                 # screen_point = screen_point/2 #somente para teste
-                print("------- screen_point: ",screen_point)
                 #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
                 triangle_2d_coord.append(screen_point[0,0])
                 triangle_2d_coord.append(screen_point[1,0])
-            print("-----------------------------------------------triangle coord", triangle_2d_coord)
 
             GL.fill_triangle(triangle_2d_coord, colors)
 
@@ -121,7 +118,6 @@ class GL:
         
     @staticmethod
     def fill_triangle(vertices, colors):
-        print(GL.width, GL.height, "W H")
         """Função para rasterizar os pixels dentro do triângulo """
         # print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
         # print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
@@ -130,17 +126,17 @@ class GL:
 
         x_list = vertices[::2]
         y_list = vertices[1::2]
-        print("x_list ", x_list)
-        print("y_list ", y_list)
+        print("x_list", x_list)
+        print("y_list", y_list)
 
-
-
+        #gpu.GPU.draw_pixels([50,150], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
+        n = 0
         for j in range(int(min(x_list)), int(max(x_list))):
             for i in range(int(min(y_list)), int(max(y_list))):
-                if inside(x_list, y_list, i+0.5,j+0.5):
+                if inside(x_list, y_list, j,i):
                     #print("i, j: ", i, j)
-                    gpu.GPU.draw_pixels([i,j], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
-
+                    gpu.GPU.draw_pixels([j,i], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
+                    n+=1 
 
 
 
@@ -231,13 +227,13 @@ class GL:
         # pilha implementada.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Saindo de Transform")
+        # print("Saindo de Transform")
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
         """Função usada para renderizar TriangleStripSet."""
         # A função triangleStripSet é usada para desenhar tiras de triângulos interconectados,
-        # você receberá as coordenadas dos pontos no parâmetro point, esses pontos são uma
+        # você receberá as coordenadas dos pontos stripCount parâmetro point, esses pontos são uma
         # lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor da coordenada x
         # do primeiro ponto, point[1] o valor y do primeiro ponto, point[2] o valor z da
         # coordenada z do primeiro ponto. Já point[3] é a coordenada x do segundo ponto e assim
@@ -248,14 +244,67 @@ class GL:
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TriangleStripSet : pontos = {0} ".format(point), end='')
-        for i, strip in enumerate(stripCount):
-            print("strip[{0}] = {1} ".format(i, strip), end='')
-        print("")
-        print("TriangleStripSet : colors = {0}".format(colors)) # imprime no terminal as cores
+        # print("TriangleStripSet : pontos = {0} ".format(point), end='')
+        # for i, strip in enumerate(stripCount):
+        #     print("TriangleStripSet : colors = {0}".format(colors)) # imprime no terminal as cores
+        #     print("strip[{0}] = {1} ".format(i, strip), end='')
+        # print("")
+        
+        points_2d = []
+        for i in range(0, len(point)-2, +3):
+ 
+            point3d = np.matrix([[point[i]], [point[i+1]], [point[i+2]], [1]])
+            
+            world_point = GL.world.dot(point3d)
+            #Identificando as coordenadas ortonormais (matrix Look-At)
+            # print("world_point: ",world_point)
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+            #matriz camera translação
+            camera_translation = np.matrix([
+                [1, 0, 0, GL.position[0,0]],
+                [0, 1, 0, GL.position[0,1]],
+                [0, 0, 1, GL.position[0,2]],
+                [0, 0, 0, 1]
+            ])
+
+            camera_rotation = getRotationMatrix(GL.orientation)
+
+            #Transformação de Look-at           (T.R)⁻1 = R⁻1 . T⁼-1
+            x_matrix = np.linalg.inv(camera_rotation).dot(np.linalg.inv(camera_translation))
+            #Coordenadas do Mundo -> Coordenadas Camera
+            camera_point = x_matrix.dot(world_point)
+
+            #Transformações Perspectivas
+            perspective = GL.p_matrix.dot(camera_point)
+
+            #Divisão homogenea para fazer a normalização:
+            perspective_normalized = perspective/perspective[3][0]
+            # perspective_normalized = np.divide(perspective, perspective[3][0])
+
+
+            #Tensformação para coordenadas da tela
+            screen_point = GL.screen_matrix.dot(perspective_normalized)
+            # screen_point = screen_point/2 #somente para teste
+            #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+            points_2d.append(screen_point[0,0])
+            points_2d.append(screen_point[1,0])
+        
+
+        for i in range(0,stripCount[0]-1):
+            lista_vertice = []
+            for j in range(i, i+3):
+                lista_vertice.append(points_2d[j])
+                lista_vertice.append(points_2d[j+1])
+                
+            GL.fill_triangle(lista_vertice, colors)
+
+
+
+        
+    
+
+        
+
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
@@ -272,12 +321,69 @@ class GL:
         # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index))
-        print("IndexedTriangleStripSet : colors = {0}".format(colors)) # imprime as cores
+        # # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        # print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index))
+        # print("IndexedTriangleStripSet : colors = {0}".format(colors)) # imprime as cores
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        
+        points_2d = []
+        for i in range(0, len(point)-2, +3):
+ 
+            point3d = np.matrix([[point[i]], [point[i+1]], [point[i+2]], [1]])
+            
+            world_point = GL.world.dot(point3d)
+            #Identificando as coordenadas ortonormais (matrix Look-At)
+            # print("world_point: ",world_point)
+
+            #matriz camera translação
+            camera_translation = np.matrix([
+                [1, 0, 0, GL.position[0,0]],
+                [0, 1, 0, GL.position[0,1]],
+                [0, 0, 1, GL.position[0,2]],
+                [0, 0, 0, 1]
+            ])
+
+            camera_rotation = getRotationMatrix(GL.orientation)
+
+            #Transformação de Look-at           (T.R)⁻1 = R⁻1 . T⁼-1
+            x_matrix = np.linalg.inv(camera_rotation).dot(np.linalg.inv(camera_translation))
+            #Coordenadas do Mundo -> Coordenadas Camera
+            camera_point = x_matrix.dot(world_point)
+
+            #Transformações Perspectivas
+            perspective = GL.p_matrix.dot(camera_point)
+
+            #Divisão homogenea para fazer a normalização:
+            perspective_normalized = perspective/perspective[3][0]
+            # perspective_normalized = np.divide(perspective, perspective[3][0])
+
+
+            #Tensformação para coordenadas da tela
+            screen_point = GL.screen_matrix.dot(perspective_normalized)
+            # screen_point = screen_point/2 #somente para teste
+            #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+            points_2d.append(screen_point[0,0])
+            points_2d.append(screen_point[1,0])
+        
+        i = 0
+
+        for i in range(len(index)-3):
+            lista_vertice = []
+            if i%2 == 0:
+                for j in range(index[i], index[i]+3):
+                    lista_vertice.append(points_2d[j*2])
+                    lista_vertice.append(points_2d[j*2+1])
+            else:
+                for j in range(index[i]+3, index[i], -1):
+                    # print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: ", j)
+                    lista_vertice.append(points_2d[j*2])
+                    lista_vertice.append(points_2d[j*2+1])
+
+            
+            GL.fill_triangle(lista_vertice, colors)
+
+
+
 
     @staticmethod
     def box(size, colors):
@@ -293,8 +399,99 @@ class GL:
         print("Box : size = {0}".format(size)) # imprime no terminal pontos
         print("Box : colors = {0}".format(colors)) # imprime no terminal as cores
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        points_3d = []
+        points_3d.append(0)
+
+        p1 = [0,       0,       0      ]
+        p2 = [size[0], 0,       0      ]
+        p3 = [0,       size[1], 0      ]
+        p4 = [0,       0,       size[2]]
+        p5 = [0,       size[1], size[2]]
+        p6 = [size[0], size[1], 0      ]
+        p7 = [size[0], 0,       size[2]]
+        p8 = [size[0], size[1], size[2]]
+        points_3d = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8
+
+        points_2d = []
+        for i in range(0, len(points_3d)-2, +3):
+ 
+            point3d = np.matrix([[points_3d[i]], [points_3d[i+1]], [points_3d[i+2]], [1]])
+            
+            world_point = GL.world.dot(point3d)
+            #Identificando as coordenadas ortonormais (matrix Look-At)
+            # print("world_point: ",world_point)
+
+            #matriz camera translação
+            camera_translation = np.matrix([
+                [1, 0, 0, GL.position[0,0]],
+                [0, 1, 0, GL.position[0,1]],
+                [0, 0, 1, GL.position[0,2]],
+                [0, 0, 0, 1]
+            ])
+
+            camera_rotation = getRotationMatrix(GL.orientation)
+
+            #Transformação de Look-at           (T.R)⁻1 = R⁻1 . T⁼-1
+            x_matrix = np.linalg.inv(camera_rotation).dot(np.linalg.inv(camera_translation))
+            #Coordenadas do Mundo -> Coordenadas Camera
+            camera_point = x_matrix.dot(world_point)
+
+            #Transformações Perspectivas
+            perspective = GL.p_matrix.dot(camera_point)
+
+            #Divisão homogenea para fazer a normalização:
+            perspective_normalized = perspective/perspective[3][0]
+            # perspective_normalized = np.divide(perspective, perspective[3][0])
+
+
+            #Tensformação para coordenadas da tela
+            screen_point = GL.screen_matrix.dot(perspective_normalized)
+            # screen_point = screen_point/2 #somente para teste
+            #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+            points_2d.append(screen_point[0,0])
+            points_2d.append(screen_point[1,0])
+        
+        print("points 2d::===l: ", points_2d)
+        
+        # 7 4 5
+        vertice = points_2d[12:14] + points_2d[6:8] + points_2d[8:10]
+        GL.fill_triangle(vertice, colors)
+
+        # 5 8 7
+        vertice = points_2d[8:10] + points_2d[14:16] + points_2d[12:14]
+        GL.fill_triangle(vertice, colors)
+
+        # 4 1 3
+        vertice = points_2d[6:8] + points_2d[:2] + points_2d[4:6]
+        GL.fill_triangle(vertice, colors)
+
+        #3 5 4
+        vertice = points_2d[4:6] + points_2d[8:10] + points_2d[6:8]
+        GL.fill_triangle(vertice, colors)
+
+        #5 3 6
+        vertice = points_2d[8:10] + points_2d[4:6] + points_2d[10:12]
+        GL.fill_triangle(vertice, colors)
+
+        # 6 8 5
+        vertice = points_2d[10:12] + points_2d[14:16] + points_2d[8:10]
+        GL.fill_triangle(vertice, colors)
+
+        #1 3 2
+        vertice = points_2d[0:2] + points_2d[4:6] + points_2d[2:4]
+        GL.fill_triangle(vertice, colors) 
+
+        #3 6 2
+        vertice = points_2d[4:6] + points_2d[10:12] + points_2d[2:4]
+        GL.fill_triangle(vertice, colors)
+
+        #7 2 6
+        vertice = points_2d[12:14] + points_2d[2:4] + points_2d[10:12]
+        GL.fill_triangle(vertice, colors)
+
+        #6 8 7 
+        vertice = points_2d[10:12] + points_2d[14:16] + points_2d[12:14]
+        GL.fill_triangle(vertice, colors)
 
     @staticmethod
     def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
@@ -305,7 +502,7 @@ class GL:
         # Você receberá as coordenadas dos pontos no parâmetro cord, esses
         # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor
         # da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto, point[2]
-        # o valor z da coordenada z do primeiro ponto. Já point[3] é a coordenada x do
+        # o valor z da coordenada z do primeiro ponto. iá point[3] é a coo7denada x do
         # segundo ponto e assim por diante. No IndexedFaceSet uma lista informando
         # como conectar os vértices é informada em coordIndex, o valor -1 indica que a lista
         # acabou. A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o

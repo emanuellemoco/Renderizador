@@ -26,14 +26,15 @@ def line_eq(x1,y1,x0,y0,x,y):
     return L >= 0
     
 
-def inside(x_v, y_v, x, y):
+def inside(x_v, y_v, x, y, par=True):
     #Funcao que checa se um ponto esta dentro. 
     # Se o ponto checado em l1, l2 e l3 por positivo, ele esta dentro do triangulo e deve ser pintado
     for i in range(0,len(x_v),3):
-        l1 = line_eq(x_v[i+1],y_v[i+1],x_v[i],y_v[i], x,y)
-        l2 = line_eq(x_v[i+2],y_v[i+2],x_v[i+1],y_v[i+1], x,y)
-        l3 = line_eq(x_v[i],y_v[i],x_v[i+2],y_v[i+2], x,y)
-        if l1 and l2 and l3:
+        if par:
+            l1 = line_eq(x_v[i+1],y_v[i+1],x_v[i],y_v[i], x,y)
+            l2 = line_eq(x_v[i+2],y_v[i+2],x_v[i+1],y_v[i+1], x,y)
+            l3 = line_eq(x_v[i],y_v[i],x_v[i+2],y_v[i+2], x,y)                                     
+        if (l1 and l2 and l3):
             return True
     return False
     
@@ -41,44 +42,31 @@ def inside(x_v, y_v, x, y):
 
 
 
-# def getRotationMatrix(rotation):
-
-#     #Matrix de Rotações
-#     if rotation[0] != 0:
-#         rotation_matrix = np.matrix([
-#             [1, 0, 0, 0],
-#             [0, math.cos(rotation[3]), -math.sin(rotation[3]), 0],
-#             [0, math.sin(rotation[3]), math.cos(rotation[3]), 0],
-#             [0, 0, 0, 1]
-#         ]) 
-
-#     elif rotation[1] != 0:
-#         rotation_matrix = np.matrix([
-#             [math.cos(rotation[3]), 0, math.sin(rotation[3]), 0],
-#             [0, 1, 0, 0],
-#             [-math.sin(rotation[3]), 0, math.cos(rotation[3]), 0],
-#             [0, 0, 0, 1]
-#         ])
-
-#     else:
-#         rotation_matrix = np.matrix([
-#             [math.cos(rotation[3]), -math.sin(rotation[3]), 0, 0],
-#             [math.sin(rotation[3]), math.cos(rotation[3]), 0, 0],
-#             [0, 0, 1, 0],
-#             [0, 0, 0, 1]
-#         ])
-#     return rotation_matrix
-
 def getRotationMatrix(rotation):
-    theta = rotation[3]
-    qi = rotation[0] * math.sin(theta / 2)
-    qj = rotation[1] * math.sin(theta / 2)
-    qk = rotation[2] * math.sin(theta / 2)
-    qr = math.cos(theta / 2)
 
-    return np.matrix([
-        [1 - 2 * (qj ** 2 + qk ** 2), 2 * (qi * qj - qk * qr), 2 * (qi * qk + qj * qr), 0], 
-        [2 * (qi * qj + qk * qr), 1 - 2 * (qi ** 2 + qk ** 2), 2 * (qj * qk - qi * qr), 0],
-        [2 * (qi * qk - qj * qr), 2 * (qj * qk + qi * qr), 1 - 2 * (qi ** 2 + qj ** 2), 0],
-        [0, 0, 0, 1]
-    ])
+    #Matrix de Rotações
+    if rotation[0] != 0:
+        rotation_matrix = np.matrix([
+            [1, 0, 0, 0],
+            [0, math.cos(rotation[3]), -math.sin(rotation[3]), 0],
+            [0, math.sin(rotation[3]), math.cos(rotation[3]), 0],
+            [0, 0, 0, 1]
+        ]) 
+
+    elif rotation[1] != 0:
+        rotation_matrix = np.matrix([
+            [math.cos(rotation[3]), 0, math.sin(rotation[3]), 0],
+            [0, 1, 0, 0],
+            [-math.sin(rotation[3]), 0, math.cos(rotation[3]), 0],
+            [0, 0, 0, 1]
+        ])
+
+    else:
+        rotation_matrix = np.matrix([
+            [math.cos(rotation[3]), -math.sin(rotation[3]), 0, 0],
+            [math.sin(rotation[3]), math.cos(rotation[3]), 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ])
+    return rotation_matrix
+
