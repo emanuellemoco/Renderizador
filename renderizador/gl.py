@@ -126,8 +126,7 @@ class GL:
 
         x_list = vertices[::2]
         y_list = vertices[1::2]
-        print("x_list", x_list)
-        print("y_list", y_list)
+
 
         #gpu.GPU.draw_pixels([50,150], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
         n = 0
@@ -396,8 +395,8 @@ class GL:
         # encontre os vértices e defina os triângulos.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Box : size = {0}".format(size)) # imprime no terminal pontos
-        print("Box : colors = {0}".format(colors)) # imprime no terminal as cores
+        # print("Box : size = {0}".format(size)) # imprime no terminal pontos
+        # print("Box : colors = {0}".format(colors)) # imprime no terminal as cores
 
         points_3d = []
         points_3d.append(0)
@@ -451,7 +450,6 @@ class GL:
             points_2d.append(screen_point[0,0])
             points_2d.append(screen_point[1,0])
         
-        print("points 2d::===l: ", points_2d)
         
         # 7 4 5
         vertice = points_2d[12:14] + points_2d[6:8] + points_2d[8:10]
@@ -516,18 +514,18 @@ class GL:
         # cor da textura conforme a posição do mapeamento. Dentro da classe GPU já está
         # implementadado um método para a leitura de imagens.
 
-        # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("IndexedFaceSet : ")
-        if coord:
-            print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
-        if colorPerVertex:
-            print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
-        if texCoord:
-            print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
-        if current_texture:
-            image = gpu.GPU.load_texture(current_texture[0])
-            print("\t Matriz com image = {0}".format(image))
-        print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
+        # # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        # print("IndexedFaceSet : ")
+        # if coord:
+        #     print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
+        # if colorPerVertex:
+        #     print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
+        # if texCoord:
+        #     print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
+        # if current_texture:
+        #     image = gpu.GPU.load_texture(current_texture[0])
+        #     print("\t Matriz com image = {0}".format(image))
+        # print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
