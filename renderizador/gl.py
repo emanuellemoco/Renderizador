@@ -103,12 +103,10 @@ class GL:
         triangle_2d_coord = GL.get2DCoord(point)
 
         GL.fill_triangle(triangle_2d_coord, colors)
-
-
-
+    
         
     @staticmethod
-    def fill_triangle(vertices, colors):
+    def fill_triangle(vertices, colors, reverse=False):
         """Função para rasterizar os pixels dentro do triângulo """
         # print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
         # print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
@@ -117,16 +115,19 @@ class GL:
 
         x_list = vertices[::2]
         y_list = vertices[1::2]
+        if reverse:
+            x_list = x_list[::-1]
+            y_list = y_list[::-1]
 
 
         #gpu.GPU.draw_pixels([50,150], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
-        n = 0
+        n = 2
         for j in range(int(min(x_list)), int(max(x_list))):
-            for i in range(int(min(y_list)), int(max(y_list))):
+            for i in range(int(min(y_list)), int(max(y_list))): 
                 if inside(x_list, y_list, j,i):
                     #print("i, j: ", i, j)
                     gpu.GPU.draw_pixels([j,i], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
-                    n+=1 
+                n+=1 
 
 
 
@@ -241,16 +242,17 @@ class GL:
         # print("")
         
         points_2d = GL.get2DCoord(point)
-        
+        orientation = 1
         for i in range(0,stripCount[0]-1):
             lista_vertice = []
             for j in range(i, i+3):
-                lista_vertice.append(points_2d[j])
-                lista_vertice.append(points_2d[j+1])
-                
-            GL.fill_triangle(lista_vertice, colors)
-
-
+                lista_vertice.append(points_2d[2*(j-1)])
+                lista_vertice.append(points_2d[2*(j-1)+1])
+            if orientation % 2 ==0:
+                GL.fill_triangle(lista_vertice, colors)
+            else:
+                GL.fill_triangle(lista_vertice, colors, reverse=True)
+            orientation +=1
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
         """Função usada para renderizar IndexedTriangleStripSet."""
@@ -272,20 +274,17 @@ class GL:
 
         
         points_2d = GL.get2DCoord(point)
-
+        orientation = 2
         for i in range(len(index)-3):
             lista_vertice = []
-            if i%2 == 0:
-                for j in range(index[i], index[i]+3):
-                    lista_vertice.append(points_2d[j*2])
-                    lista_vertice.append(points_2d[j*2+1])
+            for j in range(index[i], index[i]+3):
+                lista_vertice.append(points_2d[j*2])
+                lista_vertice.append(points_2d[j*2+1])
+            if orientation % 2 ==0:
+                GL.fill_triangle(lista_vertice, colors)
             else:
-                for j in range(index[i]+3, index[i], -1):
-                    lista_vertice.append(points_2d[j*2])
-                    lista_vertice.append(points_2d[j*2+1])
-            
-            GL.fill_triangle(lista_vertice, colors)
-
+                GL.fill_triangle(lista_vertice, colors, reverse=True)
+            orientation +=1 
 
 
 
