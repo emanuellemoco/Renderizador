@@ -38,6 +38,49 @@ class GL:
         ]) 
 
     @staticmethod
+    def get2DCoord(point):
+        #Para cada triangulo
+        points_2d = []
+        for i in range(0, len(point)-2, +3):
+ 
+            point3d = np.matrix([[point[i]], [point[i+1]], [point[i+2]], [1]])
+            
+            world_point = GL.world.dot(point3d)
+            #Identificando as coordenadas ortonormais (matrix Look-At)
+            # print("world_point: ",world_point)
+
+            #matriz camera translação
+            camera_translation = np.matrix([
+                [1, 0, 0, GL.position[0,0]],
+                [0, 1, 0, GL.position[0,1]],
+                [0, 0, 1, GL.position[0,2]],
+                [0, 0, 0, 1]
+            ])
+
+            camera_rotation = getRotationMatrix(GL.orientation)
+
+            #Transformação de Look-at           (T.R)⁻1 = R⁻1 . T⁼-1
+            x_matrix = np.linalg.inv(camera_rotation).dot(np.linalg.inv(camera_translation))
+            #Coordenadas do Mundo -> Coordenadas Camera
+            camera_point = x_matrix.dot(world_point)
+
+            #Transformações Perspectivas
+            perspective = GL.p_matrix.dot(camera_point)
+
+            #Divisão homogenea para fazer a normalização:
+            perspective_normalized = perspective/perspective[3][0]
+            # perspective_normalized = np.divide(perspective, perspective[3][0])
+
+
+            #Tensformação para coordenadas da tela
+            screen_point = GL.screen_matrix.dot(perspective_normalized)
+            # screen_point = screen_point/2 #somente para teste
+            #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+            points_2d.append(screen_point[0,0])
+            points_2d.append(screen_point[1,0])
+        return points_2d
+
+    @staticmethod
     def triangleSet(point, colors):
         """Função usada para renderizar TriangleSet."""
         # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
@@ -57,64 +100,12 @@ class GL:
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         # gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        triangle_2d_coord = GL.get2DCoord(point)
+
+        GL.fill_triangle(triangle_2d_coord, colors)
 
 
-        
-        # Para cada triangulo
-        for i in range(0,len(point),9):
-            if i+8>len(point):
-                break
-            triangle_2d_coord = []
-            for j in range(i, i+9,3):
-                # point3d = np.matrix([
-                #     [point[j],point[j+1],point[j+2],1]
-                # ])  
-                point3d = np.matrix([[point[j]], [point[j+1]], [point[j+2]], [1]])
-                world_point = GL.world.dot(point3d)
-                #Identificando as coordenadas ortonormais (matrix Look-At)
-                # print("world_point: ",world_point)
 
-                #matriz camera translação
-                camera_translation = np.matrix([
-                    [1, 0, 0, GL.position[0,0]],
-                    [0, 1, 0, GL.position[0,1]],
-                    [0, 0, 1, GL.position[0,2]],
-                    [0, 0, 0, 1]
-                ])
-
-                camera_rotation = getRotationMatrix(GL.orientation)
-
-                #Transformação de Look-at           (T.R)⁻1 = R⁻1 . T⁼-1
-                x_matrix = np.linalg.inv(camera_rotation).dot(np.linalg.inv(camera_translation))
-                #Coordenadas do Mundo -> Coordenadas Camera
-                camera_point = x_matrix.dot(world_point)
-
-                #Transformações Perspectivas
-                perspective = GL.p_matrix.dot(camera_point)
-
-                #Divisão homogenea para fazer a normalização:
-                perspective_normalized = perspective/perspective[3][0]
-                # perspective_normalized = np.divide(perspective, perspective[3][0])
-
-
-                #Tensformação para coordenadas da tela
-                screen_point = GL.screen_matrix.dot(perspective_normalized)
-                # screen_point = screen_point/2 #somente para teste
-                #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
-                triangle_2d_coord.append(screen_point[0,0])
-                triangle_2d_coord.append(screen_point[1,0])
-
-            GL.fill_triangle(triangle_2d_coord, colors)
-
-
-            #gpu.GPU.draw_pixels([int(point_1[0]), int(point_1[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
-            #gpu.GPU.draw_pixels([int(point_2[0]), int(point_2[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
-            #gpu.GPU.draw_pixels([int(point_3[0]), int(point_3[1])], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
-
-        
-            #Translacao 
-
-            #World (multiplicar a matriz )
         
     @staticmethod
     def fill_triangle(vertices, colors):
@@ -249,46 +240,8 @@ class GL:
         #     print("strip[{0}] = {1} ".format(i, strip), end='')
         # print("")
         
-        points_2d = []
-        for i in range(0, len(point)-2, +3):
- 
-            point3d = np.matrix([[point[i]], [point[i+1]], [point[i+2]], [1]])
-            
-            world_point = GL.world.dot(point3d)
-            #Identificando as coordenadas ortonormais (matrix Look-At)
-            # print("world_point: ",world_point)
-
-            #matriz camera translação
-            camera_translation = np.matrix([
-                [1, 0, 0, GL.position[0,0]],
-                [0, 1, 0, GL.position[0,1]],
-                [0, 0, 1, GL.position[0,2]],
-                [0, 0, 0, 1]
-            ])
-
-            camera_rotation = getRotationMatrix(GL.orientation)
-
-            #Transformação de Look-at           (T.R)⁻1 = R⁻1 . T⁼-1
-            x_matrix = np.linalg.inv(camera_rotation).dot(np.linalg.inv(camera_translation))
-            #Coordenadas do Mundo -> Coordenadas Camera
-            camera_point = x_matrix.dot(world_point)
-
-            #Transformações Perspectivas
-            perspective = GL.p_matrix.dot(camera_point)
-
-            #Divisão homogenea para fazer a normalização:
-            perspective_normalized = perspective/perspective[3][0]
-            # perspective_normalized = np.divide(perspective, perspective[3][0])
-
-
-            #Tensformação para coordenadas da tela
-            screen_point = GL.screen_matrix.dot(perspective_normalized)
-            # screen_point = screen_point/2 #somente para teste
-            #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
-            points_2d.append(screen_point[0,0])
-            points_2d.append(screen_point[1,0])
+        points_2d = GL.get2DCoord(point)
         
-
         for i in range(0,stripCount[0]-1):
             lista_vertice = []
             for j in range(i, i+3):
@@ -296,13 +249,6 @@ class GL:
                 lista_vertice.append(points_2d[j+1])
                 
             GL.fill_triangle(lista_vertice, colors)
-
-
-
-        
-    
-
-        
 
 
     @staticmethod
@@ -325,46 +271,7 @@ class GL:
         # print("IndexedTriangleStripSet : colors = {0}".format(colors)) # imprime as cores
 
         
-        points_2d = []
-        for i in range(0, len(point)-2, +3):
- 
-            point3d = np.matrix([[point[i]], [point[i+1]], [point[i+2]], [1]])
-            
-            world_point = GL.world.dot(point3d)
-            #Identificando as coordenadas ortonormais (matrix Look-At)
-            # print("world_point: ",world_point)
-
-            #matriz camera translação
-            camera_translation = np.matrix([
-                [1, 0, 0, GL.position[0,0]],
-                [0, 1, 0, GL.position[0,1]],
-                [0, 0, 1, GL.position[0,2]],
-                [0, 0, 0, 1]
-            ])
-
-            camera_rotation = getRotationMatrix(GL.orientation)
-
-            #Transformação de Look-at           (T.R)⁻1 = R⁻1 . T⁼-1
-            x_matrix = np.linalg.inv(camera_rotation).dot(np.linalg.inv(camera_translation))
-            #Coordenadas do Mundo -> Coordenadas Camera
-            camera_point = x_matrix.dot(world_point)
-
-            #Transformações Perspectivas
-            perspective = GL.p_matrix.dot(camera_point)
-
-            #Divisão homogenea para fazer a normalização:
-            perspective_normalized = perspective/perspective[3][0]
-            # perspective_normalized = np.divide(perspective, perspective[3][0])
-
-
-            #Tensformação para coordenadas da tela
-            screen_point = GL.screen_matrix.dot(perspective_normalized)
-            # screen_point = screen_point/2 #somente para teste
-            #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
-            points_2d.append(screen_point[0,0])
-            points_2d.append(screen_point[1,0])
-        
-        i = 0
+        points_2d = GL.get2DCoord(point)
 
         for i in range(len(index)-3):
             lista_vertice = []
@@ -374,10 +281,8 @@ class GL:
                     lista_vertice.append(points_2d[j*2+1])
             else:
                 for j in range(index[i]+3, index[i], -1):
-                    # print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: ", j)
                     lista_vertice.append(points_2d[j*2])
                     lista_vertice.append(points_2d[j*2+1])
-
             
             GL.fill_triangle(lista_vertice, colors)
 
@@ -411,45 +316,7 @@ class GL:
         p8 = [size[0], size[1], size[2]]
         points_3d = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8
 
-        points_2d = []
-        for i in range(0, len(points_3d)-2, +3):
- 
-            point3d = np.matrix([[points_3d[i]], [points_3d[i+1]], [points_3d[i+2]], [1]])
-            
-            world_point = GL.world.dot(point3d)
-            #Identificando as coordenadas ortonormais (matrix Look-At)
-            # print("world_point: ",world_point)
-
-            #matriz camera translação
-            camera_translation = np.matrix([
-                [1, 0, 0, GL.position[0,0]],
-                [0, 1, 0, GL.position[0,1]],
-                [0, 0, 1, GL.position[0,2]],
-                [0, 0, 0, 1]
-            ])
-
-            camera_rotation = getRotationMatrix(GL.orientation)
-
-            #Transformação de Look-at           (T.R)⁻1 = R⁻1 . T⁼-1
-            x_matrix = np.linalg.inv(camera_rotation).dot(np.linalg.inv(camera_translation))
-            #Coordenadas do Mundo -> Coordenadas Camera
-            camera_point = x_matrix.dot(world_point)
-
-            #Transformações Perspectivas
-            perspective = GL.p_matrix.dot(camera_point)
-
-            #Divisão homogenea para fazer a normalização:
-            perspective_normalized = perspective/perspective[3][0]
-            # perspective_normalized = np.divide(perspective, perspective[3][0])
-
-
-            #Tensformação para coordenadas da tela
-            screen_point = GL.screen_matrix.dot(perspective_normalized)
-            # screen_point = screen_point/2 #somente para teste
-            #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
-            points_2d.append(screen_point[0,0])
-            points_2d.append(screen_point[1,0])
-        
+        points_2d = GL.get2DCoord(points_3d)        
         
         # 7 4 5
         vertice = points_2d[12:14] + points_2d[6:8] + points_2d[8:10]
