@@ -303,59 +303,47 @@ class GL:
         # print("Box : colors = {0}".format(colors)) # imprime no terminal as cores
 
         points_3d = []
-        points_3d.append(0)
 
-        p1 = [0,       0,       0      ]
-        p2 = [size[0], 0,       0      ]
-        p3 = [0,       size[1], 0      ]
-        p4 = [0,       0,       size[2]]
-        p5 = [0,       size[1], size[2]]
-        p6 = [size[0], size[1], 0      ]
-        p7 = [size[0], 0,       size[2]]
-        p8 = [size[0], size[1], size[2]]
+        p1 = [-size[0], -size[1],  size[2]] # P1 = (-1, -1, 1)
+        p2 = [-size[0],  size[1],  size[2]] # P2 = (-1, 1, 1)
+        p3 = [size[0], -size[1],  size[2]]  # P3 = (1, -1, 1)
+        p4 = [-size[0],  size[1], -size[2]] # P4 = (-1, 1, -1)
+        p5 = [size[0],  size[1],  size[2]]  # P5 = (1, 1, 1)
+        p6 = [size[0], -size[1], -size[2]]  # P6 = (1, -1, -1)
+        p7 = [-size[0], -size[1], -size[2]] # P7 = (-1, -1, -1)
+        p8 = [size[0],  size[1], -size[2]]  # P8 = (1, 1, -1)
         points_3d = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8
 
-        points_2d = GL.get2DCoord(points_3d)        
-        
-        # 7 4 5
-        vertice = points_2d[12:14] + points_2d[6:8] + points_2d[8:10]
+        points_2d = GL.get2DCoord(points_3d)
+    
+    # quadrado 1 7 4 2 
+        # 1 7 4
+        vertice = points_2d[0:2] + points_2d[12:14] + points_2d[6:8]
         GL.fill_triangle(vertice, colors)
 
-        # 5 8 7
-        vertice = points_2d[8:10] + points_2d[14:16] + points_2d[12:14]
+        # 4 2 1 
+        vertice = points_2d[6:8] + points_2d[2:4] + points_2d[0:2]
         GL.fill_triangle(vertice, colors)
 
-        # 4 1 3
-        vertice = points_2d[6:8] + points_2d[:2] + points_2d[4:6]
+    # quadrado 3 6 8 5 
+        # 3 6 8
+        vertice = points_2d[4:6] + points_2d[10:12] + points_2d[14:16]
         GL.fill_triangle(vertice, colors)
 
-        #3 5 4
-        vertice = points_2d[4:6] + points_2d[8:10] + points_2d[6:8]
+        # 8 5 3 
+        vertice = points_2d[14:16] + points_2d[8:10] + points_2d[4:6]
         GL.fill_triangle(vertice, colors)
 
-        #5 3 6
-        vertice = points_2d[8:10] + points_2d[4:6] + points_2d[10:12]
+    # ligacoes
+        # 1 6 7 
+        vertice = points_2d[0:2] + points_2d[10:12] + points_2d[12:14]
         GL.fill_triangle(vertice, colors)
 
-        # 6 8 5
-        vertice = points_2d[10:12] + points_2d[14:16] + points_2d[8:10]
+        # 2 4 8 
+        vertice = points_2d[2:4] + points_2d[6:8] + points_2d[14:16]
         GL.fill_triangle(vertice, colors)
 
-        #1 3 2
-        vertice = points_2d[0:2] + points_2d[4:6] + points_2d[2:4]
-        GL.fill_triangle(vertice, colors) 
 
-        #3 6 2
-        vertice = points_2d[4:6] + points_2d[10:12] + points_2d[2:4]
-        GL.fill_triangle(vertice, colors)
-
-        #7 2 6
-        vertice = points_2d[12:14] + points_2d[2:4] + points_2d[10:12]
-        GL.fill_triangle(vertice, colors)
-
-        #6 8 7 
-        vertice = points_2d[10:12] + points_2d[14:16] + points_2d[12:14]
-        GL.fill_triangle(vertice, colors)
 
     @staticmethod
     def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
