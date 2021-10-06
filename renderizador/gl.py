@@ -14,6 +14,7 @@ import math
 from utils import ( 
     inside,
     getRotationMatrix,
+    baricentro
 )
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
@@ -106,7 +107,7 @@ class GL:
     
         
     @staticmethod
-    def fill_triangle(vertices, colors, reverse=False):
+    def fill_triangle(vertices, colors, reverse=False, vertexColor=False):
         """Função para rasterizar os pixels dentro do triângulo """
         # print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
         # print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
@@ -119,15 +120,18 @@ class GL:
             x_list = x_list[::-1]
             y_list = y_list[::-1]
 
-
-        #gpu.GPU.draw_pixels([50,150], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
-        n = 2
+        print("colors : ", colors)
+        print("VERTICES fill_triangle - " ,vertices)
         for j in range(int(min(x_list)), int(max(x_list))):
             for i in range(int(min(y_list)), int(max(y_list))): 
                 if inside(x_list, y_list, j,i):
+                    if vertexColor:
+                        alfa, beta, gama = baricentro(j, i, x_list[0], x_list[1], x_list[2], y_list[0], y_list[1], y_list[2] )
+                        gpu.GPU.draw_pixels([j,i], gpu.GPU.RGB8,  [colors[0][0]*alfa*255+colors[0][1]*beta*255+colors[0][2]*gama*255, colors[1][0]*alfa*255+colors[1][1]*beta*255+colors[1][2]*gama*255, colors[2][0]*alfa*255+colors[2][1]*beta*255+colors[2][2]*gama*255])
+
+                    else:
                     #print("i, j: ", i, j)
-                    gpu.GPU.draw_pixels([j,i], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
-                n+=1 
+                      gpu.GPU.draw_pixels([j,i], gpu.GPU.RGB8,  [colors["diffuseColor"][0]*255, colors["diffuseColor"][1]*255, colors["diffuseColor"][2]*255])
 
 
 
@@ -382,9 +386,34 @@ class GL:
             print("\t Matriz com image = {0}".format(image))
             print("\t Dimensões da image = {0}".format(image.shape))
         print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
+        
+        
+        points_2d = GL.get2DCoord(coord)
+        
+        i = 0
+        while i < (len(coordIndex)):
+            print("i for : ", i)
+            lista_vertice = []
+            colors_list = []
+            while coordIndex[i] != -1:
+                print("inside while", i)
+                lista_vertice.append(points_2d[2 * (coordIndex[i]-1)])
+                lista_vertice.append(points_2d[2 * (coordIndex[i]-1) + 1])
+                colors_list.append(color[3*colorIndex[i]:3*colorIndex[i]+3])
+                i+=1
+            GL.fill_triangle(lista_vertice, colors_list, vertexColor=True)
+            i+=1
 
+
+# [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0], 
+#  -------------   -----------     -----------   ------------
+# colorIndex = [0, 1, 2, -1, 2, 3, 0, -1]        
+        
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        
+
+        
 
 
     # Para o futuro (Não para versão atual do projeto.)
