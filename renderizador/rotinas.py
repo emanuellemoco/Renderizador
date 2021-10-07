@@ -3,7 +3,7 @@
 """
 Rotinas de operação de nós X3D.
 
-Desenvolvido por:
+Desenvolvido por: Emanuelle e Leonardo
 Disciplina: Computação Gráfica
 Data:
 """

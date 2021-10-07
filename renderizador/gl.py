@@ -121,13 +121,14 @@ class GL:
             y_list = y_list[::-1]
 
         print("colors : ", colors)
-        print("VERTICES fill_triangle - " ,vertices)
+        # print("VERTICES fill_triangle - " ,vertices)
         for j in range(int(min(x_list)), int(max(x_list))):
             for i in range(int(min(y_list)), int(max(y_list))): 
                 if inside(x_list, y_list, j,i):
+                    #caso tenha vertexColor, tem que calcular o baricentro e usar os valores de alfa, beta e gama para multiplicar pela cor
                     if vertexColor:
                         alfa, beta, gama = baricentro(j, i, x_list[0], x_list[1], x_list[2], y_list[0], y_list[1], y_list[2] )
-                        gpu.GPU.draw_pixels([j,i], gpu.GPU.RGB8,  [colors[0][0]*alfa*255+colors[0][1]*beta*255+colors[0][2]*gama*255, colors[1][0]*alfa*255+colors[1][1]*beta*255+colors[1][2]*gama*255, colors[2][0]*alfa*255+colors[2][1]*beta*255+colors[2][2]*gama*255])
+                        gpu.GPU.draw_pixels([j,i], gpu.GPU.RGB8,  [colors[0][0]*alfa*255+colors[1][0]*beta*255+colors[2][0]*gama*255, colors[0][1]*alfa*255+colors[1][1]*beta*255+colors[2][1]*gama*255, colors[0][2]*alfa*255+colors[1][2]*beta*255+colors[2][2]*gama*255])
 
                     else:
                     #print("i, j: ", i, j)
@@ -207,6 +208,8 @@ class GL:
         
         rotation_matrix = getRotationMatrix(rotation)
         GL.world = translation_matrix.dot(rotation_matrix).dot(scale_matrix)
+
+        print("ENTREI AQUI")
 
         
 
@@ -390,17 +393,18 @@ class GL:
         
         points_2d = GL.get2DCoord(coord)
         
+        #criando a lista de vertice (x, y) com sua respectiva cor para passar para funcao fill_triangle
         i = 0
         while i < (len(coordIndex)):
-            print("i for : ", i)
             lista_vertice = []
             colors_list = []
             while coordIndex[i] != -1:
-                print("inside while", i)
-                lista_vertice.append(points_2d[2 * (coordIndex[i]-1)])
-                lista_vertice.append(points_2d[2 * (coordIndex[i]-1) + 1])
+                lista_vertice.append(points_2d[2 * (coordIndex[i])])
+                lista_vertice.append(points_2d[2 * (coordIndex[i]) + 1])
                 colors_list.append(color[3*colorIndex[i]:3*colorIndex[i]+3])
                 i+=1
+            # print("lista_vertice: ", lista_vertice)
+            # print("colors_list: ", colors_list)
             GL.fill_triangle(lista_vertice, colors_list, vertexColor=True)
             i+=1
 
