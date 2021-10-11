@@ -37,11 +37,13 @@ class GL:
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ]) 
+        GL.matrix_list = []
 
     @staticmethod
     def get2DCoord(point):
         #Para cada triangulo
         points_2d = []
+        zbuffer = []
         for i in range(0, len(point)-2, +3):
  
             point3d = np.matrix([[point[i]], [point[i+1]], [point[i+2]], [1]])
@@ -71,7 +73,8 @@ class GL:
             #Divisão homogenea para fazer a normalização:
             perspective_normalized = perspective/perspective[3][0]
             # perspective_normalized = np.divide(perspective, perspective[3][0])
-
+            
+            zbuffer.append(perspective_normalized[2][0])
 
             #Tensformação para coordenadas da tela
             screen_point = GL.screen_matrix.dot(perspective_normalized)
@@ -79,7 +82,8 @@ class GL:
             #gpu.GPU.draw_pixels([int(screen_point[0,0]), int(screen_point[0,1])], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
             points_2d.append(screen_point[0,0])
             points_2d.append(screen_point[1,0])
-        return points_2d
+            
+        return points_2d, zbuffer
 
     @staticmethod
     def triangleSet(point, colors):
@@ -101,13 +105,13 @@ class GL:
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         # gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
-        triangle_2d_coord = GL.get2DCoord(point)
+        triangle_2d_coord, zbuffer = GL.get2DCoord(point)
 
-        GL.fill_triangle(triangle_2d_coord, colors)
+        GL.fill_triangle(triangle_2d_coord, colors, zbuffer)
     
         
     @staticmethod
-    def fill_triangle(vertices, colors, reverse=False, vertexColor=False):
+    def fill_triangle(vertices, colors, zbuffer, reverse=False, vertexColor=False):
         """Função para rasterizar os pixels dentro do triângulo """
         # print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
         # print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
@@ -120,7 +124,7 @@ class GL:
             x_list = x_list[::-1]
             y_list = y_list[::-1]
 
-        print("colors : ", colors)
+        # print("colors : ", colors)
         # print("VERTICES fill_triangle - " ,vertices)
         for j in range(int(min(x_list)), int(max(x_list))):
             for i in range(int(min(y_list)), int(max(y_list))): 
@@ -190,7 +194,8 @@ class GL:
         # if rotation:
         #     print("rotation = {0} ".format(rotation), end='') # imprime no terminal
         # print("")
-    
+        print("entrei na transform")   
+        
         # O Braga nos explicou como fazer essa parte
         scale_matrix = np.matrix([
             [scale[0], 0, 0 ,0],
@@ -207,12 +212,12 @@ class GL:
         ])
         
         rotation_matrix = getRotationMatrix(rotation)
-        GL.world = translation_matrix.dot(rotation_matrix).dot(scale_matrix)
-
-        print("ENTREI AQUI")
-
+        if len(GL.matrix_list) > 0:
+            GL.world = (GL.matrix_list[-1]).dot(translation_matrix.dot(rotation_matrix).dot(scale_matrix))
+        else:
+            GL.world = translation_matrix.dot(rotation_matrix).dot(scale_matrix) 
+        GL.matrix_list.append(GL.world)
         
-
         # GL.world = scale.dot(translation)  # PRECISA DISSO? ??? SE NÃO TIVER ROTAÇÃO E MULTIPLICAR POR ELA MESMA DÁ ERRO? BRAGA HElp
 
 
@@ -225,7 +230,11 @@ class GL:
         # pilha implementada.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        # print("Saindo de Transform")
+        GL.matrix_list.pop()
+        if len(GL.matrix_list) > 0:
+            GL.world = GL.matrix_list[-1]
+        else:
+            GL.world = None
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
@@ -248,7 +257,7 @@ class GL:
         #     print("strip[{0}] = {1} ".format(i, strip), end='')
         # print("")
         
-        points_2d = GL.get2DCoord(point)
+        points_2d, zbuffer = GL.get2DCoord(point)
         orientation = 1
         for i in range(0,stripCount[0]-1):
             lista_vertice = []
@@ -256,9 +265,9 @@ class GL:
                 lista_vertice.append(points_2d[2*(j-1)])
                 lista_vertice.append(points_2d[2*(j-1)+1])
             if orientation % 2 ==0:
-                GL.fill_triangle(lista_vertice, colors)
+                GL.fill_triangle(lista_vertice, colors, zbuffer)
             else:
-                GL.fill_triangle(lista_vertice, colors, reverse=True)
+                GL.fill_triangle(lista_vertice, colors,zbuffer, reverse=True)
             orientation +=1
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
@@ -280,7 +289,7 @@ class GL:
         # print("IndexedTriangleStripSet : colors = {0}".format(colors)) # imprime as cores
 
         
-        points_2d = GL.get2DCoord(point)
+        points_2d, zbuffer = GL.get2DCoord(point)
         orientation = 2
         for i in range(len(index)-3):
             lista_vertice = []
@@ -288,9 +297,9 @@ class GL:
                 lista_vertice.append(points_2d[j*2])
                 lista_vertice.append(points_2d[j*2+1])
             if orientation % 2 ==0:
-                GL.fill_triangle(lista_vertice, colors)
+                GL.fill_triangle(lista_vertice, colors, zbuffer)
             else:
-                GL.fill_triangle(lista_vertice, colors, reverse=True)
+                GL.fill_triangle(lista_vertice, colors, zbuffer, reverse=True)
             orientation +=1 
 
 
@@ -321,34 +330,34 @@ class GL:
         p8 = [size[0],  size[1], -size[2]]  # P8 = (1, 1, -1)
         points_3d = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8
 
-        points_2d = GL.get2DCoord(points_3d)
+        points_2d, zbuffer = GL.get2DCoord(points_3d)
     
     # quadrado 1 7 4 2 
         # 1 7 4
         vertice = points_2d[0:2] + points_2d[12:14] + points_2d[6:8]
-        GL.fill_triangle(vertice, colors)
+        GL.fill_triangle(vertice, colors, zbuffer)
 
         # 4 2 1 
         vertice = points_2d[6:8] + points_2d[2:4] + points_2d[0:2]
-        GL.fill_triangle(vertice, colors)
+        GL.fill_triangle(vertice, colors, zbuffer)
 
     # quadrado 3 6 8 5 
         # 3 6 8
         vertice = points_2d[4:6] + points_2d[10:12] + points_2d[14:16]
-        GL.fill_triangle(vertice, colors)
+        GL.fill_triangle(vertice, colors, zbuffer)
 
         # 8 5 3 
         vertice = points_2d[14:16] + points_2d[8:10] + points_2d[4:6]
-        GL.fill_triangle(vertice, colors)
+        GL.fill_triangle(vertice, colors, zbuffer)
 
     # ligacoes
         # 1 6 7 
         vertice = points_2d[0:2] + points_2d[10:12] + points_2d[12:14]
-        GL.fill_triangle(vertice, colors)
+        GL.fill_triangle(vertice, colors, zbuffer)
 
         # 2 4 8 
         vertice = points_2d[2:4] + points_2d[6:8] + points_2d[14:16]
-        GL.fill_triangle(vertice, colors)
+        GL.fill_triangle(vertice, colors, zbuffer)
 
 
 
@@ -391,7 +400,7 @@ class GL:
         print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
         
         
-        points_2d = GL.get2DCoord(coord)
+        points_2d, zbuffer = GL.get2DCoord(coord)
         
         #criando a lista de vertice (x, y) com sua respectiva cor para passar para funcao fill_triangle
         i = 0
@@ -405,7 +414,7 @@ class GL:
                 i+=1
             # print("lista_vertice: ", lista_vertice)
             # print("colors_list: ", colors_list)
-            GL.fill_triangle(lista_vertice, colors_list, vertexColor=True)
+            GL.fill_triangle(lista_vertice, colors_list, zbuffer, vertexColor=True)
             i+=1
 
 
