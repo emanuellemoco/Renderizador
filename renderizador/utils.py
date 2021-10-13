@@ -26,15 +26,14 @@ def line_eq(x1,y1,x0,y0,x,y):
     return L >= 0
     
 
-def inside(x_v, y_v, x, y, par=True):
+def inside(x_v, y_v, x, y):
     #Funcao que checa se um ponto esta dentro. 
     # Se o ponto checado em l1, l2 e l3 por positivo, ele esta dentro do triangulo e deve ser pintado
 
     for i in range(0,len(x_v),3):
-        if par:
-            l1 = line_eq(x_v[i+1],y_v[i+1],x_v[i],y_v[i], x,y)
-            l2 = line_eq(x_v[i+2],y_v[i+2],x_v[i+1],y_v[i+1], x,y)
-            l3 = line_eq(x_v[i],y_v[i],x_v[i+2],y_v[i+2], x,y)                                     
+        l1 = line_eq(x_v[i+1],y_v[i+1],x_v[i],y_v[i], x,y)
+        l2 = line_eq(x_v[i+2],y_v[i+2],x_v[i+1],y_v[i+1], x,y)
+        l3 = line_eq(x_v[i],y_v[i],x_v[i+2],y_v[i+2], x,y)                                     
         if (l1 and l2 and l3):
             return True
     return False

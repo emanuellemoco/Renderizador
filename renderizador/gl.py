@@ -115,7 +115,7 @@ class GL:
         GL.fill_triangle(triangle_2d_coord, colors, z_list)
 
     @staticmethod
-    def fill_triangle(vertices, colors, z, reverse=False, vertexColor=False):
+    def fill_triangle(vertices, colors, z, texture=None, reverse=False, vertexColor=False, hasTexture=False):
         """Função para rasterizar os pixels dentro do triângulo"""
         # print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
         # print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
@@ -128,21 +128,14 @@ class GL:
             y_list = y_list[::-1]
             z = z[::-1]
 
-        # print("VERTICES fill_triangle - " ,vertices)
+        if hasTexture:
+            print(len(texture))
+
         for j in range(int(min(x_list)), int(max(x_list))):
             for i in range(int(min(y_list)), int(max(y_list))):
                 if inside(x_list, y_list, j, i):
                     # caso tenha vertexColor, tem que calcular o baricentro e usar os valores de alfa, beta e gama para multiplicar pela cor
-                    alfa, beta, gama = baricentro(
-                        j,
-                        i,
-                        x_list[0],
-                        x_list[1],
-                        x_list[2],
-                        y_list[0],
-                        y_list[1],
-                        y_list[2],
-                    )
+                    alfa, beta, gama = baricentro(j, i, x_list[0], x_list[1], x_list[2], y_list[0], y_list[1], y_list[2],)
                     current_z = alfa * z[0] + beta * z[1] + gama * z[2]
                     if current_z < GL.zbuffer[i, j]:
                         GL.zbuffer[i, j] = current_z
@@ -151,15 +144,9 @@ class GL:
                                 [j, i],
                                 gpu.GPU.RGB8,
                                 [
-                                    colors[0][0] * alfa * 255
-                                    + colors[1][0] * beta * 255
-                                    + colors[2][0] * gama * 255,
-                                    colors[0][1] * alfa * 255
-                                    + colors[1][1] * beta * 255
-                                    + colors[2][1] * gama * 255,
-                                    colors[0][2] * alfa * 255
-                                    + colors[1][2] * beta * 255
-                                    + colors[2][2] * gama * 255,
+                                    colors[0][0] * alfa * 255 + colors[1][0] * beta * 255 + colors[2][0] * gama * 255,
+                                    colors[0][1] * alfa * 255 + colors[1][1] * beta * 255 + colors[2][1] * gama * 255,
+                                    colors[0][2] * alfa * 255 + colors[1][2] * beta * 255 + colors[2][2] * gama * 255,
                                 ],
                             )
 
@@ -451,15 +438,26 @@ class GL:
         #     print("\t Dimensões da image = {0}".format(image.shape))
         # print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
 
+        print("Tex coord", texCoord)
+        print("Tex coord index", texCoordIndex)
+        print("Current texture", current_texture)
+
         points_2d, z_list = GL.get2DCoord(coord)
 
         # criando a lista de vertice (x, y) com sua respectiva cor para passar para funcao fill_triangle
         vertex_color = True
+        texture = False
         colors_list = []
+        image_texture = None
 
         if color is None:
             vertex_color = False
             colors_list = colors
+        if texCoord is not None:
+            vertex_color = False
+            texture = True
+            image_texture = gpu.GPU.load_texture(current_texture[0])
+            #print(image_texture)
 
         i = 0
         while i < (len(coordIndex)):
@@ -474,7 +472,7 @@ class GL:
                 i += 1
             # print("lista_vertice: ", lista_vertice)
             # print("colors_list: ", colors_list)
-            GL.fill_triangle(lista_vertice, colors_list, z_list, vertexColor=False)
+            GL.fill_triangle(lista_vertice, colors_list, z_list, texture=image_texture, vertexColor=vertex_color, hasTexture=texture)
             i += 1
 
     # [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0],
