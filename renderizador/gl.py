@@ -156,7 +156,7 @@ class GL:
                             # print(texture.shape)
                             # print("->>> ",texture)
                             x_tex = int((alfa * u_list[0] + beta * u_list[1] + gama * u_list[2]) * texture.shape[1])
-                            y_tex = int((alfa * v_list[0] + beta * v_list[1] + gama * v_list[2]) * texture.shape[0])
+                            y_tex = int((alfa * v_list[0] + beta * v_list[1] + gama * v_list[2]) * (-texture.shape[0]))
 
                             gpu.GPU.draw_pixels(
                                 [j, i],
@@ -455,10 +455,6 @@ class GL:
         #     print("\t Dimensões da image = {0}".format(image.shape))
         # print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
 
-        print("Tex coord", texCoord)
-        print("Tex coord index", texCoordIndex)
-        print("Current texture", current_texture)
-
         points_2d, z_list = GL.get2DCoord(coord)
 
         # criando a lista de vertice (x, y) com sua respectiva cor para passar para funcao fill_triangle
@@ -475,7 +471,6 @@ class GL:
             vertex_color = False
             texture = True
             image_texture = gpu.GPU.load_texture(current_texture[0])
-            #print(image_texture)
 
         i = 0
         while i < (len(coordIndex)):
@@ -490,13 +485,11 @@ class GL:
                 if vertex_color:
                     colors_list.append(color[3 * colorIndex[i] : 3 * colorIndex[i] + 3])
                 if texture:
-                    uv.append(texCoord[texCoordIndex[i]])
-                    uv.append(texCoord[texCoordIndex[i+1]])
+                    uv.append(texCoord[2*texCoordIndex[i]])
+                    uv.append(texCoord[2*texCoordIndex[i]+1])
 
                 i += 1
-            # print("lista_vertice: ", lista_vertice)
-            # print("colors_list: ", colors_list)
-            print("uaaaaaaaaaaaaaaaaaav  ", uv)
+
             GL.fill_triangle(lista_vertice, colors_list, z_list,texture=image_texture, uv=uv, vertexColor=vertex_color, hasTexture=texture)
             i += 1
 
