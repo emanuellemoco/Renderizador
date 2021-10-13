@@ -79,7 +79,7 @@ class GL:
             perspective_normalized = perspective / perspective[3][0]
             # perspective_normalized = np.divide(perspective, perspective[3][0])
 
-            z_list.append(perspective_normalized[2][0])
+            z_list.append(perspective[2][0])
 
             # Tensformação para coordenadas da tela
             screen_point = GL.screen_matrix.dot(perspective_normalized)
@@ -115,7 +115,7 @@ class GL:
         GL.fill_triangle(triangle_2d_coord, colors, z_list)
 
     @staticmethod
-    def fill_triangle(vertices, colors, z, texture=None, reverse=False, vertexColor=False, hasTexture=False):
+    def fill_triangle(vertices, colors, z, texture=None, uv=None, reverse=False, vertexColor=False, hasTexture=False):
         """Função para rasterizar os pixels dentro do triângulo"""
         # print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
         # print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
@@ -129,14 +129,16 @@ class GL:
             z = z[::-1]
 
         if hasTexture:
-            print(len(texture))
+            u_list = uv[::2]
+            v_list = uv[1::2] 
 
         for j in range(int(min(x_list)), int(max(x_list))):
-            for i in range(int(min(y_list)), int(max(y_list))):
+            for i in range(int(min(y_list)), int(max(y_list))): ### KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA 
                 if inside(x_list, y_list, j, i):
                     # caso tenha vertexColor, tem que calcular o baricentro e usar os valores de alfa, beta e gama para multiplicar pela cor
                     alfa, beta, gama = baricentro(j, i, x_list[0], x_list[1], x_list[2], y_list[0], y_list[1], y_list[2],)
-                    current_z = alfa * z[0] + beta * z[1] + gama * z[2]
+                    
+                    current_z = 1 / (alfa * (1/z[0]) + beta * (1/z[1]) + gama * (1/z[2]))
                     if current_z < GL.zbuffer[i, j]:
                         GL.zbuffer[i, j] = current_z
                         if vertexColor:
@@ -150,6 +152,21 @@ class GL:
                                 ],
                             )
 
+                        elif hasTexture:
+                            # print(texture.shape)
+                            # print("->>> ",texture)
+                            x_tex = int((alfa * u_list[0] + beta * u_list[1] + gama * u_list[2]) * texture.shape[1])
+                            y_tex = int((alfa * v_list[0] + beta * v_list[1] + gama * v_list[2]) * texture.shape[0])
+
+                            gpu.GPU.draw_pixels(
+                                [j, i],
+                                gpu.GPU.RGB8,
+                                [
+                                    texture[y_tex][x_tex][0],
+                                    texture[y_tex][x_tex][1],
+                                    texture[y_tex][x_tex][2],
+                                ],
+                            )
                         else:
                             # print("i, j: ", i, j)
                             gpu.GPU.draw_pixels(
@@ -449,6 +466,7 @@ class GL:
         texture = False
         colors_list = []
         image_texture = None
+        uv = []
 
         if color is None:
             vertex_color = False
@@ -462,6 +480,8 @@ class GL:
         i = 0
         while i < (len(coordIndex)):
             lista_vertice = []
+            if texture:
+                uv  = []
             if vertex_color:
                 colors_list = []
             while coordIndex[i] != -1:
@@ -469,10 +489,15 @@ class GL:
                 lista_vertice.append(points_2d[2 * (coordIndex[i]) + 1])
                 if vertex_color:
                     colors_list.append(color[3 * colorIndex[i] : 3 * colorIndex[i] + 3])
+                if texture:
+                    uv.append(texCoord[texCoordIndex[i]])
+                    uv.append(texCoord[texCoordIndex[i+1]])
+
                 i += 1
             # print("lista_vertice: ", lista_vertice)
             # print("colors_list: ", colors_list)
-            GL.fill_triangle(lista_vertice, colors_list, z_list, texture=image_texture, vertexColor=vertex_color, hasTexture=texture)
+            print("uaaaaaaaaaaaaaaaaaav  ", uv)
+            GL.fill_triangle(lista_vertice, colors_list, z_list,texture=image_texture, uv=uv, vertexColor=vertex_color, hasTexture=texture)
             i += 1
 
     # [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0],
