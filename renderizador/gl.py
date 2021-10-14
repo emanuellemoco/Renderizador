@@ -146,11 +146,18 @@ class GL:
                                 [j, i],
                                 gpu.GPU.RGB8,
                                 [
-                                    colors[0][0] * alfa * 255 + colors[1][0] * beta * 255 + colors[2][0] * gama * 255,
-                                    colors[0][1] * alfa * 255 + colors[1][1] * beta * 255 + colors[2][1] * gama * 255,
-                                    colors[0][2] * alfa * 255 + colors[1][2] * beta * 255 + colors[2][2] * gama * 255,
+                                    # colors[0][0] * alfa * 255 + colors[1][0] * beta * 255 + colors[2][0] * gama * 255,
+                                    # colors[0][1] * alfa * 255 + colors[1][1] * beta * 255 + colors[2][1] * gama * 255,
+                                    # colors[0][2] * alfa * 255 + colors[1][2] * beta * 255 + colors[2][2] * gama * 255,
+                                    current_z * (colors[0][0] * alfa * 255 / z[0] + colors[1][0] * beta * 255 / z[1] + colors[2][0] * gama * 255/ z[2]),
+                                    current_z * (colors[0][1] * alfa * 255 / z[0] + colors[1][1] * beta * 255 / z[1] + colors[2][1] * gama * 255/ z[2]),
+                                    current_z * (colors[0][2] * alfa * 255 / z[0] + colors[1][2] * beta * 255 / z[1] + colors[2][2] * gama * 255/ z[2]),
                                 ],
                             )
+                            # print("R: {0} -> {1} ".format(colors[0][0] * alfa * 255 + colors[1][0] * beta * 255 + colors[2][0] * gama * 255, current_z * (colors[0][0] * alfa * 255 / z[0] + colors[1][0] * beta * 255 / z[1] + colors[2][0] * gama * 255/ z[2]) ) )
+                            # print("G: {0} -> {1} ".format(colors[0][1] * alfa * 255 + colors[1][1] * beta * 255 + colors[2][1] * gama * 255, current_z * (colors[0][1] * alfa * 255 / z[0] + colors[1][1] * beta * 255 / z[1] + colors[2][1] * gama * 255/ z[2]) ))
+                            # print("B: {0} -> {1} ".format(colors[0][2] * alfa * 255 + colors[1][2] * beta * 255 + colors[2][2] * gama * 255, current_z * (colors[0][2] * alfa * 255 / z[0] + colors[1][2] * beta * 255 / z[1] + colors[2][2] * gama * 255/ z[2])))
+                            # print("-" *10)
 
                         elif hasTexture:
                             # print(texture.shape)
@@ -240,7 +247,6 @@ class GL:
         # if rotation:
         #     print("rotation = {0} ".format(rotation), end='') # imprime no terminal
         # print("")
-        print("entrei na transform")
 
         # O Braga nos explicou como fazer essa parte
         scale_matrix = np.matrix(
