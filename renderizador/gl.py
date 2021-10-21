@@ -521,6 +521,40 @@ class GL:
         print("Sphere : radius = {0}".format(radius)) # imprime no terminal o raio da esfera
         print("Sphere : colors = {0}".format(colors)) # imprime no terminal as cores
 
+        #dividir em 5 
+        #desenhar por tiras 
+        #no topo define o ponto central 
+        #phi - muda de curva
+        #theta - gira em volta de uma curva
+        # de 0 a 2pi 
+        
+        pontos = 5 # número de pontos 
+        aneis = 5 #número de aneis
+        coord_3d = []
+        for theta in range(0,360,int(360/pontos)):
+            for phi in range (0,360,int(180/aneis)):
+                x = radius * math.sin(phi) * math.cos(theta)
+                y = radius * math.sin(phi) * math.sin(theta)
+                z = radius * math.cos(phi)
+                coord_3d.append(x)
+                coord_3d.append(y)
+                coord_3d.append(z)
+        coord_2d = GL.get2dCoord(coord_3d)
+        
+        for i in range(0,len(coord_2d),aneis):
+            for j in range(i,)
+        i = 0
+        while i < len(coord_2d):
+
+            anel_end = (i + pontos) * 2
+            while i < anel_end:
+                
+                i+=2
+    #i    i+1     i+7          #i      i+7     i+6  
+    #0      1       7           0       7       6   
+    #1      2       8           1       8       7
+    #2      3       9           2       9       8
+
     @staticmethod
     def navigationInfo(headlight):
         """Características físicas do avatar do visualizador e do modelo de visualização."""
@@ -650,6 +684,8 @@ class GL:
     # Para o futuro (Não para versão atual do projeto.)
     def vertex_shader(self, shader):
         """Para no futuro implementar um vertex shader."""
+        print("AAAAAAAAAAAAAAA")
 
     def fragment_shader(self, shader):
         """Para no futuro implementar um fragment shader."""
+        print("OIIIIIIIIIIIIIIIIII")
