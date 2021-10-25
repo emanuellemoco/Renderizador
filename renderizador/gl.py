@@ -523,37 +523,79 @@ class GL:
 
         #dividir em 5 
         #desenhar por tiras 
-        #no topo define o ponto central 
+        #no topo define o ponto central z
         #phi - muda de curva
         #theta - gira em volta de uma curva
         # de 0 a 2pi 
         
-        pontos = 5 # número de pontos 
-        aneis = 5 #número de aneis
+        pontos = 12 # número de pontos 
+        aneis = 12 #número de aneis
         coord_3d = []
-        for theta in range(0,360,int(360/pontos)):
-            for phi in range (0,360,int(180/aneis)):
-                x = radius * math.sin(phi) * math.cos(theta)
-                y = radius * math.sin(phi) * math.sin(theta)
-                z = radius * math.cos(phi)
+        for phi in np.arange(180,360,(360/aneis)):
+            for theta in np.arange(0,360,(360/pontos)):  #LEMBRAR QUE ISSO É SÓ METADE DA ESFERA
+                # print("THETA: {0} PHI: {0} ".format(theta,phi))
+                x = radius * math.sin(phi * math.pi / 180) * math.cos(theta * math.pi / 180)
+                y = radius * math.sin(phi * math.pi / 180) * math.sin(theta * math.pi / 180)
+                z = radius * math.cos(phi * math.pi / 180)
                 coord_3d.append(x)
                 coord_3d.append(y)
                 coord_3d.append(z)
-        coord_2d = GL.get2dCoord(coord_3d)
-        
-        for i in range(0,len(coord_2d),aneis):
-            for j in range(i,)
-        i = 0
-        while i < len(coord_2d):
+                #print(f"({x}, {y}, {z})")
 
-            anel_end = (i + pontos) * 2
+        
+
+        coord_2d, z_list = GL.get2DCoord(coord_3d)
+    
+        i = 0
+        while i < len(coord_2d) - (2*aneis):#len(coord_2d ) - (2* aneis):
+            anel_end = i +  pontos * 2
+            vertices = []
+            first_point = i
             while i < anel_end:
+                # vertices = coord_2d[i] + coord_2d[i+1] + coord_2d[i+2] + coord_2d[i+3] + coord_2d[i+14] + coord_2d[i+15] 
+                vertices.append(coord_2d[i])            #0
+                vertices.append(coord_2d[i+1])          #0
+                if ((i/2) %aneis != pontos -1):
+                    vertices.append(coord_2d[i+3])          #1
+                    vertices.append(coord_2d[i+4])          #1
+                    vertices.append(coord_2d[i+2*pontos+2]) #7
+                    vertices.append(coord_2d[i+2*pontos+3]) #7
+                else: 
+                    vertices.append(coord_2d[first_point])          #primeiro
+                    vertices.append(coord_2d[first_point+1])        #primeiro
+                    vertices.append(coord_2d[i+3])          #+1
+                    vertices.append(coord_2d[i+4])          #+1
+                GL.fill_triangle(vertices, colors, z_list)
+
+
+                vertices.append(coord_2d[i])             #0  
+                vertices.append(coord_2d[i+1])           #0
+                vertices.append(coord_2d[i+2*pontos])    #6
+                vertices.append(coord_2d[i+2*pontos+1])  #6
+                if ((i/2) %aneis != pontos -1):
+                    vertices.append(coord_2d[i+2*pontos+2])  #7
+                    vertices.append(coord_2d[i+2*pontos+3])  #7                    
+                else:
+                    vertices.append(coord_2d[i+3])          #1
+                    vertices.append(coord_2d[i+4])          #1
+
+                GL.fill_triangle(vertices, colors, z_list, reverse=True)
+
+
                 
                 i+=2
+
+
     #i    i+1     i+7          #i      i+7     i+6  
-    #0      1       7           0       7       6   
-    #1      2       8           1       8       7
-    #2      3       9           2       9       8
+    #0      1       7           0       6       7   
+    #1      2       8           1       7       8
+    #2      3       9           2       8       9
+    #3      4       10          3       9       10     
+    #4      5       11          4       10       11
+    
+    #5      6       12          5       11       12                       
+    #5      0       6           5        1  
+
 
     @staticmethod
     def navigationInfo(headlight):
