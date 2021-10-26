@@ -47,6 +47,7 @@ class GL:
 
     @staticmethod
     def get2DCoord(point):
+        
         # Para cada triangulo
         points_2d = []
         z_list = []
@@ -527,12 +528,12 @@ class GL:
         #phi - muda de curva
         #theta - gira em volta de uma curva
         # de 0 a 2pi 
-        
-        pontos = 12 # número de pontos 
-        aneis = 12 #número de aneis
+
+        pontos = 6 # número de pontos 
+        aneis = 5 #número de aneis
         coord_3d = []
         for phi in np.arange(180,360,(360/aneis)):
-            for theta in np.arange(0,360,(360/pontos)):  #LEMBRAR QUE ISSO É SÓ METADE DA ESFERA
+            for theta in np.arange(0,360,(360/pontos)): 
                 # print("THETA: {0} PHI: {0} ".format(theta,phi))
                 x = radius * math.sin(phi * math.pi / 180) * math.cos(theta * math.pi / 180)
                 y = radius * math.sin(phi * math.pi / 180) * math.sin(theta * math.pi / 180)
@@ -540,50 +541,199 @@ class GL:
                 coord_3d.append(x)
                 coord_3d.append(y)
                 coord_3d.append(z)
-                #print(f"({x}, {y}, {z})")
+                print(f"aaaaaaaaa: ({x}, {y}, {z})")
 
         
 
         coord_2d, z_list = GL.get2DCoord(coord_3d)
-    
+
+        # pontos de cima e de baixo
+        # lista_pontos = [0, -radius, 0, 0, radius, 0] 
+        lista_pontos = [0, 0, -radius, 0, 0, radius] 
+
+        lista_pontos2d, z = GL.get2DCoord(lista_pontos)
+
+
+        x_2d = coord_2d[::2]
+        y_2d = coord_2d[1::2]
+        #print("x -> : ", x_2d)
+        #print("y -> : ", y_2d)
+        #print("x2d_len")
+        for i in range(len(x_2d)-pontos):
+            vertices = [] 
+            z_list_atual = []
+            #primeiro trangulo do retangulo
+            if i % pontos == (pontos -1): #5 0 6
+                #11 % 6 = 5
+                print("i", i)
+                vertices.append(x_2d[i])         # i
+                vertices.append(y_2d[i])         # i
+                z_list_atual.append(z_list[i])
+
+                vertices.append(x_2d[i+1-pontos])       # 0 (primeiro linha)
+                vertices.append(y_2d[i+1-pontos])       # 0  primeiro
+                z_list_atual.append(z_list[i+1-pontos])
+
+                vertices.append(x_2d[i+1])  # PROX
+                vertices.append(y_2d[i+1])  # PROX
+                z_list_atual.append(z_list[i+1])
+
+                GL.fill_triangle(vertices, colors, z_list_atual)
+
+                vertices = []
+                z_list_atual = []
+                #5 11 6
+                vertices.append(x_2d[i])          # 0
+                vertices.append(y_2d[i])          # 0
+                z_list_atual.append(z_list[i])
+                vertices.append(x_2d[i+pontos])   # linha de cima
+                vertices.append(y_2d[i+pontos])   # linha de cima
+                z_list_atual.append(z_list[i+pontos])
+                vertices.append(x_2d[i+1])   # prox
+                vertices.append(y_2d[i+1])   # prox
+                z_list_atual.append(z_list[i+1])
+                GL.fill_triangle(vertices, colors, z_list_atual, reverse=True)
+
+
+
+
+            else:
+                z_list_atual = []
+                vertices.append(x_2d[i])         # 0
+                vertices.append(y_2d[i])         # 0
+                z_list_atual.append(z_list[i])
+                vertices.append(x_2d[i+1])       # 1
+                vertices.append(y_2d[i+1])       # 1
+                z_list_atual.append(z_list[i+1])
+                vertices.append(x_2d[i+pontos])  # 7
+                vertices.append(y_2d[i+pontos])  # 7
+                z_list_atual.append(z_list[i+pontos])
+                GL.fill_triangle(vertices, colors, z_list_atual)
+
+                vertices = []
+                z_list_atual = []
+                vertices.append(x_2d[i])          # 0
+                vertices.append(y_2d[i])          # 0
+                z_list_atual.append(z_list[i])
+                vertices.append(x_2d[i+pontos-1]) # 6
+                vertices.append(y_2d[i+pontos-1]) # 6
+                z_list_atual.append(z_list[i+pontos-1])
+                vertices.append(x_2d[i+pontos])   # 7
+                vertices.append(y_2d[i+pontos])   # 7
+                z_list_atual.append(z_list[i+pontos])
+                GL.fill_triangle(vertices, colors, z_list_atual, reverse=True)
+                
+        
+        # PARA FAZER OS TOPOS DA ESFERA
+        #print("coord_2d pontos", coord_2d)
+        #print("lista pontos", lista_pontos2d)
+        i = len(coord_2d) - 1 - pontos
+        #print("len(coord_2d) : ", len(coord_2d) )
+
+        while i < len(x_2d) :
+           
+           vertices = []
+           if i % pontos != (pontos -1): 
+                vertices.append(x_2d[i])
+                vertices.append(y_2d[i])
+                vertices.append(x_2d[i+1])
+                vertices.append(y_2d[i+1])
+                vertices.append(lista_pontos2d[2])
+                vertices.append(lista_pontos2d[3])
+                GL.fill_triangle(vertices, colors, z_list)
+           else:
+                vertices.append(x_2d[i])
+                vertices.append(y_2d[i])
+                vertices.append(x_2d[i-pontos])
+                vertices.append(y_2d[i-pontos])
+                vertices.append(lista_pontos2d[2])
+                vertices.append(lista_pontos2d[3])
+                GL.fill_triangle(vertices, colors, z_list)
+           i+=1
+
         i = 0
-        while i < len(coord_2d) - (2*aneis):#len(coord_2d ) - (2* aneis):
-            anel_end = i +  pontos * 2
-            vertices = []
-            first_point = i
-            while i < anel_end:
-                # vertices = coord_2d[i] + coord_2d[i+1] + coord_2d[i+2] + coord_2d[i+3] + coord_2d[i+14] + coord_2d[i+15] 
-                vertices.append(coord_2d[i])            #0
-                vertices.append(coord_2d[i+1])          #0
-                if ((i/2) %aneis != pontos -1):
-                    vertices.append(coord_2d[i+3])          #1
-                    vertices.append(coord_2d[i+4])          #1
-                    vertices.append(coord_2d[i+2*pontos+2]) #7
-                    vertices.append(coord_2d[i+2*pontos+3]) #7
-                else: 
-                    vertices.append(coord_2d[first_point])          #primeiro
-                    vertices.append(coord_2d[first_point+1])        #primeiro
-                    vertices.append(coord_2d[i+3])          #+1
-                    vertices.append(coord_2d[i+4])          #+1
+        while i <pontos :
+           
+           vertices = []
+           #print("i", i)
+           if i % pontos != (pontos -1): 
+                vertices.append(x_2d[i])
+                vertices.append(y_2d[i])
+                vertices.append(x_2d[i+1])
+                vertices.append(y_2d[i+1])
+                vertices.append(lista_pontos2d[0])
+                vertices.append(lista_pontos2d[1])
                 GL.fill_triangle(vertices, colors, z_list)
 
+           else:
+                vertices.append(x_2d[i])
+                vertices.append(y_2d[i])
+                vertices.append(x_2d[i-pontos])
+                vertices.append(y_2d[i-pontos])
+                vertices.append(lista_pontos2d[0])
+                vertices.append(lista_pontos2d[1])
+                GL.fill_triangle(vertices, colors, z_list)
 
-                vertices.append(coord_2d[i])             #0  
-                vertices.append(coord_2d[i+1])           #0
-                vertices.append(coord_2d[i+2*pontos])    #6
-                vertices.append(coord_2d[i+2*pontos+1])  #6
-                if ((i/2) %aneis != pontos -1):
-                    vertices.append(coord_2d[i+2*pontos+2])  #7
-                    vertices.append(coord_2d[i+2*pontos+3])  #7                    
-                else:
-                    vertices.append(coord_2d[i+3])          #1
-                    vertices.append(coord_2d[i+4])          #1
+        
+           i+=1
+    
+            # 12    13    18           
+            # 13    14    18
+            # 14    15    18    
+            # 15    16    18
+            # 16    17    18
 
-                GL.fill_triangle(vertices, colors, z_list, reverse=True)
+            #12  17    18
+            
+        
+        
+        
+        
 
+        
+        # while i < len(coord_2d) - (2*aneis):#len(coord_2d ) - (2* aneis):
+        #     anel_end = i +  pontos * 2
+        #     vertices = []
+        #     first_point = i
+        #     while i < anel_end:
+        #         # vertices = coord_2d[i] + coord_2d[i+1] + coord_2d[i+2] + coord_2d[i+3] + coord_2d[i+14] + coord_2d[i+15] 
+        #         vertices.append(coord_2d[i])            #0
+        #         vertices.append(coord_2d[i+1])          #0
+        #         if ((i/2) %aneis != pontos -1):
+        #             vertices.append(coord_2d[i+3])          #1
+        #             vertices.append(coord_2d[i+4])          #1
+        #             vertices.append(coord_2d[i+2*pontos+2]) #7
+        #             vertices.append(coord_2d[i+2*pontos+3]) #7
+        #         else: 
+        #             vertices.append(coord_2d[first_point])          #primeiro
+        #             vertices.append(coord_2d[first_point+1])        #primeiro
+        #             vertices.append(coord_2d[i+3])          #+1
+        #             vertices.append(coord_2d[i+4])          #+1
+        #         GL.fill_triangle(vertices, colors, z_list)
+
+        #         vertices = []
+        #         vertices.append(coord_2d[i])             #0  
+        #         vertices.append(coord_2d[i+1])           #0
+        #         vertices.append(coord_2d[i+2*pontos])    #6
+        #         vertices.append(coord_2d[i+2*pontos+1])  #6
+        #         if ((i/2) %aneis != pontos -1):
+        #             vertices.append(coord_2d[i+2*pontos+2])  #7
+        #             vertices.append(coord_2d[i+2*pontos+3])  #7                    
+        #         else:
+        #             vertices.append(coord_2d[i+3])          #1
+        #             vertices.append(coord_2d[i+4])          #1
+
+        #         GL.fill_triangle(vertices, colors, z_list, reverse=True)
 
                 
-                i+=2
+        #         i+=2
+
+
+
+
+
+        
+
 
 
     #i    i+1     i+7          #i      i+7     i+6  
