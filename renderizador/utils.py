@@ -24,7 +24,6 @@ def baricentro(x, y, xA, xB, xC, yA, yB, yC):
     alfa = (- (x - xB)*(yC - yB) + (y - yB)*(xC - xB)) / (- (xA - xB)*(yC - yB) + (yA - yB)*(xC - xB))    
     beta = (- (x - xC)*(yA - yC) + (y - yC)*(xA - xC)) / (- (xB - xC)*(yA - yC) + (yB - yC)*(xA - xC))
     gama = 1 - alfa - beta
-    # print("ALFA + BETA + GAMA TEM QUE SER 1 = ", alfa+beta+gama)
 
     return alfa, beta, gama
 

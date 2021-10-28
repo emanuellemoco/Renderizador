@@ -45,6 +45,8 @@ class GL:
         GL.matrix_list = []
         GL.zbuffer = np.matrix(np.ones((GL.height, GL.width)) * np.inf)
 
+        GL.light = False
+
     @staticmethod
     def get2DCoord(point):
         
@@ -138,8 +140,8 @@ class GL:
             u_list = uv[::2]
             v_list = uv[1::2] 
 
-        for j in range(int(min(x_list)), int(max(x_list))):
-            for i in range(int(min(y_list)), int(max(y_list))): ### KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA 
+        for j in range(int(np.floor(min(x_list))), int(np.ceil(max(x_list)))):
+            for i in range(int(np.floor(min(y_list))), int(np.ceil(max(y_list)))): ### KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA KD O BRAGA 
                 if inside(x_list, y_list, j, i):
                     # caso tenha vertexColor, tem que calcular o baricentro e usar os valores de alfa, beta e gama para multiplicar pela cor
                     alfa, beta, gama = baricentro(j, i, x_list[0], x_list[1], x_list[2], y_list[0], y_list[1], y_list[2],)
@@ -519,7 +521,7 @@ class GL:
         # os triângulos.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Sphere : radius = {0}".format(radius)) # imprime no terminal o raio da esfera
+        # print("Sphere : radius = {0}".format(radius)) # imprime no terminal o raio da esfera
         print("Sphere : colors = {0}".format(colors)) # imprime no terminal as cores
 
         #dividir em 5 
@@ -529,19 +531,33 @@ class GL:
         #theta - gira em volta de uma curva
         # de 0 a 2pi 
 
-        pontos = 6 # número de pontos 
-        aneis = 5 #número de aneis
+        if GL.light:
+            normal = [0, 0, 1]
+            NL = normal * GL.L  
+            ambient_i  = GL.Iia * colors["diffuseColor"] * colors["shiness"]
+            diffuse_i  = GL.Ii * colors["diffuseColor"] * NL
+            specular_i = GL.Ii * colors["specularColor"] * (N * ((GL.L + GL.v)/np.abs(GL.L + GL.v)))**(colors["shiness"]*128)
+            
+        
+        pontos = 12 # número de pontos 
+        aneis = 12 #número de aneis
         coord_3d = []
-        for phi in np.arange(180,360,(360/aneis)):
-            for theta in np.arange(0,360,(360/pontos)): 
+
+        angulo_ponto = 2*math.pi/pontos
+        angulo_anel = 2*math.pi/aneis
+
+        for i in range(aneis):
+            phi = math.pi / 2 - i * angulo_anel
+            for j in range(pontos):#np.arange(0,360,(360/pontos)): 
                 # print("THETA: {0} PHI: {0} ".format(theta,phi))
-                x = radius * math.sin(phi * math.pi / 180) * math.cos(theta * math.pi / 180)
-                y = radius * math.sin(phi * math.pi / 180) * math.sin(theta * math.pi / 180)
-                z = radius * math.cos(phi * math.pi / 180)
+                theta = j * angulo_ponto
+                x = radius * math.sin(phi) * math.cos(theta)
+                y = radius * math.sin(phi) * math.sin(theta)
+                z = radius * math.cos(phi)
                 coord_3d.append(x)
                 coord_3d.append(y)
                 coord_3d.append(z)
-                print(f"aaaaaaaaa: ({x}, {y}, {z})")
+                # print(f"aaaaaaaaa: ({x}, {y}, {z})")
 
         
 
@@ -565,7 +581,6 @@ class GL:
             #primeiro trangulo do retangulo
             if i % pontos == (pontos -1): #5 0 6
                 #11 % 6 = 5
-                print("i", i)
                 vertices.append(x_2d[i])         # i
                 vertices.append(y_2d[i])         # i
                 z_list_atual.append(z_list[i])
@@ -688,49 +703,6 @@ class GL:
         
         
         
-        
-
-        
-        # while i < len(coord_2d) - (2*aneis):#len(coord_2d ) - (2* aneis):
-        #     anel_end = i +  pontos * 2
-        #     vertices = []
-        #     first_point = i
-        #     while i < anel_end:
-        #         # vertices = coord_2d[i] + coord_2d[i+1] + coord_2d[i+2] + coord_2d[i+3] + coord_2d[i+14] + coord_2d[i+15] 
-        #         vertices.append(coord_2d[i])            #0
-        #         vertices.append(coord_2d[i+1])          #0
-        #         if ((i/2) %aneis != pontos -1):
-        #             vertices.append(coord_2d[i+3])          #1
-        #             vertices.append(coord_2d[i+4])          #1
-        #             vertices.append(coord_2d[i+2*pontos+2]) #7
-        #             vertices.append(coord_2d[i+2*pontos+3]) #7
-        #         else: 
-        #             vertices.append(coord_2d[first_point])          #primeiro
-        #             vertices.append(coord_2d[first_point+1])        #primeiro
-        #             vertices.append(coord_2d[i+3])          #+1
-        #             vertices.append(coord_2d[i+4])          #+1
-        #         GL.fill_triangle(vertices, colors, z_list)
-
-        #         vertices = []
-        #         vertices.append(coord_2d[i])             #0  
-        #         vertices.append(coord_2d[i+1])           #0
-        #         vertices.append(coord_2d[i+2*pontos])    #6
-        #         vertices.append(coord_2d[i+2*pontos+1])  #6
-        #         if ((i/2) %aneis != pontos -1):
-        #             vertices.append(coord_2d[i+2*pontos+2])  #7
-        #             vertices.append(coord_2d[i+2*pontos+3])  #7                    
-        #         else:
-        #             vertices.append(coord_2d[i+3])          #1
-        #             vertices.append(coord_2d[i+4])          #1
-
-        #         GL.fill_triangle(vertices, colors, z_list, reverse=True)
-
-                
-        #         i+=2
-
-
-
-
 
         
 
@@ -774,9 +746,19 @@ class GL:
         print("DirectionalLight : intensity = {0}".format(intensity)) # imprime no terminal
         print("DirectionalLight : direction = {0}".format(direction)) # imprime no terminal
 
+        GL.Ilrgb = color
+        GL.Ii = intensity
+        GL.Iia = ambientIntensity
+        GL.L = direction*(-1)
+        GL.light = True
+        GL.v = np.matrix([0,0,1])
+
+        
+
+
     @staticmethod
     def pointLight(ambientIntensity, color, intensity, location):
-        """Luz pontual."""
+        """Luz pontual."""  
         # Fonte de luz pontual em um local 3D no sistema de coordenadas local. Uma fonte
         # de luz pontual emite luz igualmente em todas as direções; ou seja, é omnidirecional.
         # Possui os campos básicos ambientIntensity, cor, intensidade. Um nó PointLight ilumina
@@ -812,7 +794,7 @@ class GL:
         # iniciar eventos de ocorrência única, como um despertador;
         # Se, no final de um ciclo, o valor do loop for FALSE, a execução é encerrada.
         # Por outro lado, se o loop for TRUE no final de um ciclo, um nó dependente do
-        # tempo continua a execução no próximo ciclo. O ciclo de um nó TimeSensor dura
+        # tempo continua a execução no próximo ciclo. O ciclo de um nódirection TimeSensor dura
         # cycleInterval segundos. O valor de cycleInterval deve ser maior que zero.
 
         # Deve retornar a fração de tempo passada em fraction_changed
