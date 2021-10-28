@@ -123,7 +123,7 @@ class GL:
         GL.fill_triangle(triangle_2d_coord, colors, z_list)
 
     @staticmethod
-    def fill_triangle(vertices, colors, z, texture=None, uv=None, reverse=False, vertexColor=False, hasTexture=False):
+    def fill_triangle(vertices, colors, z, texture=None, uv=None, reverse=False, vertexColor=False, hasTexture=False, hasLight=False):
         """Função para rasterizar os pixels dentro do triângulo"""
         # print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
         # print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
@@ -182,6 +182,38 @@ class GL:
                                     texture[y_tex][x_tex][2],
                                 ],
                             )
+                        elif hasLight:
+
+                            normal = [0, 0, 1]
+                            NL = np.dot(normal, GL.L)
+                            ambient_i = [x * (GL.Iia * colors["shininess"]) for x in colors["diffuseColor"]]
+
+                            diffuse_i  = [x * GL.Ii * NL for x in colors["diffuseColor"]]
+                            aux1 =[x+y for x,y in zip(GL.L, GL.v)]
+                            aux2 = [x/np.abs(x) for x in aux1]
+                            
+                            aux3 = np.dot(aux2,normal) ** (colors["shininess"] * 128) #(normal * (aux1/np.abs(GL.L + GL.v)))**(colors["shiness"]*128)
+                            
+                            #aux3 =  [normal * x for x in aux2]
+                            specular_i = [x * GL.Ii * aux3 for x in colors["specularColor"]]
+                            aux_irgb = [x + y + z for x, y, z in zip(ambient_i, diffuse_i, specular_i)]
+                            aux_list = [x[0][0] for x in aux_irgb]
+                            aux2_irgb = np.cross(GL.Ilrgb, aux_list)
+                            i_rgb = [x + y for x, y in zip(aux2_irgb, colors["emissiveColor"])]
+                            colors_final = [x * 255 for x in i_rgb]
+                            for i in range(len(colors_final)):
+                                if colors_final[i] > 255:
+                                    colors_final[i] = 255
+
+                            gpu.GPU.draw_pixels(
+                                [j, i],
+                                gpu.GPU.RGB8,
+                                [
+                                    colors_final[0],
+                                    colors_final[1],
+                                    colors_final[2],
+                                ],
+                            )                        
                         else:
                             # print("i, j: ", i, j)
                             gpu.GPU.draw_pixels(
@@ -530,13 +562,6 @@ class GL:
         #phi - muda de curva
         #theta - gira em volta de uma curva
         # de 0 a 2pi 
-
-        if GL.light:
-            normal = [0, 0, 1]
-            NL = normal * GL.L  
-            ambient_i  = GL.Iia * colors["diffuseColor"] * colors["shiness"]
-            diffuse_i  = GL.Ii * colors["diffuseColor"] * NL
-            specular_i = GL.Ii * colors["specularColor"] * (N * ((GL.L + GL.v)/np.abs(GL.L + GL.v)))**(colors["shiness"]*128)
             
         
         pontos = 12 # número de pontos 
@@ -593,7 +618,7 @@ class GL:
                 vertices.append(y_2d[i+1])  # PROX
                 z_list_atual.append(z_list[i+1])
 
-                GL.fill_triangle(vertices, colors, z_list_atual)
+                GL.fill_triangle(vertices, colors, z_list_atual, hasLight=GL.light)
 
                 vertices = []
                 z_list_atual = []
@@ -607,7 +632,7 @@ class GL:
                 vertices.append(x_2d[i+1])   # prox
                 vertices.append(y_2d[i+1])   # prox
                 z_list_atual.append(z_list[i+1])
-                GL.fill_triangle(vertices, colors, z_list_atual, reverse=True)
+                GL.fill_triangle(vertices, colors, z_list_atual, reverse=True, hasLight=GL.light)
 
 
 
@@ -623,7 +648,7 @@ class GL:
                 vertices.append(x_2d[i+pontos])  # 7
                 vertices.append(y_2d[i+pontos])  # 7
                 z_list_atual.append(z_list[i+pontos])
-                GL.fill_triangle(vertices, colors, z_list_atual)
+                GL.fill_triangle(vertices, colors, z_list_atual, hasLight=GL.light)
 
                 vertices = []
                 z_list_atual = []
@@ -636,7 +661,7 @@ class GL:
                 vertices.append(x_2d[i+pontos])   # 7
                 vertices.append(y_2d[i+pontos])   # 7
                 z_list_atual.append(z_list[i+pontos])
-                GL.fill_triangle(vertices, colors, z_list_atual, reverse=True)
+                GL.fill_triangle(vertices, colors, z_list_atual, reverse=True, hasLight=GL.light)
                 
         
         # PARA FAZER OS TOPOS DA ESFERA
@@ -655,7 +680,7 @@ class GL:
                 vertices.append(y_2d[i+1])
                 vertices.append(lista_pontos2d[2])
                 vertices.append(lista_pontos2d[3])
-                GL.fill_triangle(vertices, colors, z_list)
+                GL.fill_triangle(vertices, colors, z_list, hasLight=GL.light)
            else:
                 vertices.append(x_2d[i])
                 vertices.append(y_2d[i])
@@ -663,7 +688,7 @@ class GL:
                 vertices.append(y_2d[i-pontos])
                 vertices.append(lista_pontos2d[2])
                 vertices.append(lista_pontos2d[3])
-                GL.fill_triangle(vertices, colors, z_list)
+                GL.fill_triangle(vertices, colors, z_list, hasLight=GL.light)
            i+=1
 
         i = 0
@@ -678,7 +703,7 @@ class GL:
                 vertices.append(y_2d[i+1])
                 vertices.append(lista_pontos2d[0])
                 vertices.append(lista_pontos2d[1])
-                GL.fill_triangle(vertices, colors, z_list)
+                GL.fill_triangle(vertices, colors, z_list, hasLight=GL.light)
 
            else:
                 vertices.append(x_2d[i])
@@ -687,7 +712,7 @@ class GL:
                 vertices.append(y_2d[i-pontos])
                 vertices.append(lista_pontos2d[0])
                 vertices.append(lista_pontos2d[1])
-                GL.fill_triangle(vertices, colors, z_list)
+                GL.fill_triangle(vertices, colors, z_list, hasLight=GL.light)
 
         
            i+=1
@@ -750,6 +775,7 @@ class GL:
         GL.Ii = intensity
         GL.Iia = ambientIntensity
         GL.L = direction*(-1)
+        GL.L = [x * (-1) for x in direction]
         GL.light = True
         GL.v = np.matrix([0,0,1])
 
