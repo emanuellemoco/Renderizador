@@ -180,9 +180,6 @@ class GL:
                                 [j, i],
                                 gpu.GPU.RGB8,
                                 [
-                                    # colors[0][0] * alfa * 255 + colors[1][0] * beta * 255 + colors[2][0] * gama * 255,
-                                    # colors[0][1] * alfa * 255 + colors[1][1] * beta * 255 + colors[2][1] * gama * 255,
-                                    # colors[0][2] * alfa * 255 + colors[1][2] * beta * 255 + colors[2][2] * gama * 255,
                                     current_z
                                     * (
                                         colors[0][0] * alfa * 255 / z[0]
@@ -203,14 +200,8 @@ class GL:
                                     ),
                                 ],
                             )
-                            # print("R: {0} -> {1} ".format(colors[0][0] * alfa * 255 + colors[1][0] * beta * 255 + colors[2][0] * gama * 255, current_z * (colors[0][0] * alfa * 255 / z[0] + colors[1][0] * beta * 255 / z[1] + colors[2][0] * gama * 255/ z[2]) ) )
-                            # print("G: {0} -> {1} ".format(colors[0][1] * alfa * 255 + colors[1][1] * beta * 255 + colors[2][1] * gama * 255, current_z * (colors[0][1] * alfa * 255 / z[0] + colors[1][1] * beta * 255 / z[1] + colors[2][1] * gama * 255/ z[2]) ))
-                            # print("B: {0} -> {1} ".format(colors[0][2] * alfa * 255 + colors[1][2] * beta * 255 + colors[2][2] * gama * 255, current_z * (colors[0][2] * alfa * 255 / z[0] + colors[1][2] * beta * 255 / z[1] + colors[2][2] * gama * 255/ z[2])))
-                            # print("-" *10)
 
                         elif hasTexture:
-                            # print(texture.shape)
-                            # print("->>> ",texture)
                             x_tex = int(
                                 (alfa * u_list[0] + beta * u_list[1] + gama * u_list[2])
                                 * texture.shape[1]
@@ -366,7 +357,6 @@ class GL:
             ]
         )
 
-        print("TRANSLATION", translation)
         translation_matrix = np.matrix(
             [
                 [1, 0, 0, translation[0]],
@@ -809,7 +799,7 @@ class GL:
 
     @staticmethod
     def navigationInfo(headlight):
-        """Características físicas do avatar do visualizador e do modelo de visualização."""
+        """Características físicas do avatar do - e do modelo de visualização."""
         # O campo do headlight especifica se um navegador deve acender um luz direcional que
         # sempre aponta na direção que o usuário está olhando. Definir este campo como TRUE
         # faz com que o visualizador forneça sempre uma luz do ponto de vista do usuário.
@@ -817,9 +807,9 @@ class GL:
         # ambientIntensity = 0,0 e direção = (0 0 −1).
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print(
-            "NavigationInfo : headlight = {0}".format(headlight)
-        )  # imprime no terminal
+        # print(
+        #     "NavigationInfo : headlight = {0}".format(headlight)
+        # )  # imprime no terminal
 
     @staticmethod
     def directionalLight(ambientIntensity, color, intensity, direction):
@@ -890,18 +880,17 @@ class GL:
 
         # Deve retornar a fração de tempo passada em fraction_changed
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print(
-            "TimeSensor : cycleInterval = {0}".format(cycleInterval)
-        )  # imprime no terminal
-        print("TimeSensor : loop = {0}".format(loop))
+        # # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        # print(
+        #     "TimeSensor : cycleInterval = {0}".format(cycleInterval)
+        # )  # imprime no terminal
+        # print("TimeSensor : loop = {0}".format(loop))
 
         # Esse método já está implementado para os alunos como exemplo
         epoch = (
             time.time()
         )  # time in seconds since the epoch as a floating point number.
         fraction_changed = (epoch % cycleInterval) / cycleInterval
-        print("CHANGED", fraction_changed)
         return fraction_changed
 
     @staticmethod
@@ -916,26 +905,35 @@ class GL:
         # na primeira e na última chave não forem idênticos, o campo closed será ignorado.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("SplinePositionInterpolator : set_fraction = {0}".format(set_fraction))
-        print(
-            "SplinePositionInterpolator : key = {0}".format(key)
-        )  # imprime no terminal
-        print("SplinePositionInterpolator : keyValue = {0}".format(keyValue))
-        print("SplinePositionInterpolator : closed = {0}".format(closed))
+        # print("SplinePositionInterpolator : set_fraction = {0}".format(set_fraction))
+        # print("SplinePositionInterpolator : key = {0}".format(key))  # imprime no terminal
+        # print("SplinePositionInterpolator : keyValue = {0}".format(keyValue))
+        # print("SplinePositionInterpolator : closed = {0}".format(closed))
 
         current_key = None
         for i in range(len(key)):
-            if key[i] >= set_fraction:
+            if key[i] > set_fraction:
                 current_key = i - 1
                 break
         current_key = 1 if current_key < 0 else current_key
-        print("current_key", current_key)
         s = (set_fraction - key[current_key]) / (
             key[current_key + 1] - key[current_key]
         )
     
-        T_minus_1 = calc_T(keyValue[3 * (current_key + 1) : 3 * (current_key + 1) + 3], keyValue[3 * (current_key - 1) : 3 * (current_key - 1) + 3])
-        T_plus_1 = calc_T(keyValue[3 * (current_key +2) : 3 * (current_key +2) + 3], keyValue[3 * (current_key + 1) : 3 * (current_key   + 1) + 3])
+        if (not closed) and (current_key == 0):
+            T_minus_1 = 0
+        elif (current_key == 0):
+            T_minus_1 = calc_T(keyValue[3 * (current_key + 1) : 3 * (current_key + 1) + 3], [keyValue[-3], keyValue[-2], keyValue[-1]])
+        else: 
+            T_minus_1 = calc_T(keyValue[3 * (current_key + 1) : 3 * (current_key + 1) + 3], keyValue[3 * (current_key - 1) : 3 * (current_key - 1) + 3])
+        
+        if (not closed) and (current_key >= len(key) - 2):
+            T_plus_1 = 0 
+        elif (current_key >= len(key) - 2):
+            T_plus_1 = calc_T(keyValue[3 * (current_key + 1) : 3 * (current_key + 1) + 3], [keyValue[0], keyValue[1], keyValue[2]])
+
+        else: 
+            T_plus_1 = calc_T(keyValue[3 * (current_key +2) : 3 * (current_key +2) + 3], keyValue[3 * (current_key + 1) : 3 * (current_key   + 1) + 3])
 
 
         S = np.matrix([[s ** 3], [s ** 2], [s], [1]])
@@ -951,7 +949,6 @@ class GL:
             ]
         )
         coord = (np.dot(np.transpose(S),hermite).dot(C)).tolist()[0]
-        print("coord", coord)
         return coord
 
     @staticmethod
@@ -978,11 +975,11 @@ class GL:
 
         return value_changed
 
+
     # Para o futuro (Não para versão atual do projeto.)
     def vertex_shader(self, shader):
         """Para no futuro implementar um vertex shader."""
-        print("AAAAAAAAAAAAAAA")
-
+        pass
     def fragment_shader(self, shader):
         """Para no futuro implementar um fragment shader."""
-        print("OIIIIIIIIIIIIIIIIII")
+        pass
