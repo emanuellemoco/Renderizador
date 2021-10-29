@@ -187,25 +187,23 @@ class GL:
                         elif hasLight:
                             U = [x_list[1]-x_list[0], y_list[1]-y_list[0], z[1]-z[0]]
                             V = [x_list[2]-x_list[0], y_list[2]-y_list[0], z[2]-z[0]]
-                            nx = U[1] * V[2] - U[2] * V[1]
-                            ny = U[2] * V[0] - U[0] * V[2]
-                            nz = U[0] * V[1] - U[1] * V[0]
-                            normal_n = [nx, ny, nz]
+                            normal_n = np.cross(V, U)
 
                             normal = np.divide(normal_n, np.linalg.norm(normal_n))
                             
                             NL = np.dot(normal, GL.L)
                             ambient_i = [x * (GL.Iia * colors["shininess"]) for x in colors["diffuseColor"]]
-
+                            
                             diffuse_i  = [x * GL.Ii * NL for x in colors["diffuseColor"]]
+                            
                             aux1 = np.add(np.array(GL.L), np.array(GL.v)) # (L+v)
                             aux2 = np.divide(aux1, np.linalg.norm(aux1))   #L+V / |L+V|
-                            aux3 =  (-1 * np.dot(aux2,normal)) ** (colors["shininess"] * 128) #(normal * (aux1/np.abs(GL.L + GL.v)))**(colors["shiness"]*128)
+                            aux3 =  (np.dot(aux2,normal)) ** (colors["shininess"] * 128) #(normal * (aux1/np.abs(GL.L + GL.v)))**(colors["shiness"]*128)
                             specular_i = [x * GL.Ii * aux3 for x in colors["specularColor"]]
-                            aux_irgb = [x + y + z for x, y, z in zip(ambient_i, diffuse_i, specular_i)]
-                            aux2_irgb = np.cross(GL.Ilrgb, aux_irgb)
-                            i_rgb = [x + y for x, y in zip(aux2_irgb, colors["emissiveColor"])]
-                            colors_final = [np.abs(x * 255) for x in i_rgb]
+                            
+                            aux_irgb = [l * (x + y + z) for l, x, y, z in zip(GL.Ilrgb, ambient_i, diffuse_i, specular_i)]
+                            i_rgb = [x + y for x, y in zip(aux_irgb, colors["emissiveColor"])]
+                            colors_final = [(x * 255) for x in i_rgb]
                             for index in range(len(colors_final)):
                                 if colors_final[index] > 255:
                                     colors_final[index] = 255  
@@ -219,7 +217,6 @@ class GL:
                                 ],
                             )                      
                         else:
-                            # print("i, j: ", i, j)
                             gpu.GPU.draw_pixels(
                                 [j, i],
                                 gpu.GPU.RGB8,
