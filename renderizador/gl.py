@@ -131,6 +131,8 @@ class GL:
         # gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem (u, v, r, g, b)
         x_list = vertices[::2]
         y_list = vertices[1::2]
+        z = [z_.tolist()[0][0] for z_ in z]
+
         if reverse:
             x_list = x_list[::-1]
             y_list = y_list[::-1]
@@ -183,22 +185,26 @@ class GL:
                                 ],
                             )
                         elif hasLight:
-
-                            normal = [0, 0, 1]
+                            a = [x_list[1]-x_list[0], y_list[1]-y_list[0], z[1]-z[0]]
+                            b = [x_list[2]-x_list[0], y_list[2]-y_list[0], z[2]-z[0]]
+                            normal_n = np.cross(a,b)
+                            normal = np.divide(normal_n, np.abs(normal_n))
+                            
                             NL = np.dot(normal, GL.L)
                             ambient_i = [x * (GL.Iia * colors["shininess"]) for x in colors["diffuseColor"]]
 
                             diffuse_i  = [x * GL.Ii * NL for x in colors["diffuseColor"]]
-                            aux1 =[x+y for x,y in zip(GL.L, GL.v)]
-                            aux2 = [x/np.abs(x) for x in aux1]
-                            
-                            aux3 = np.dot(aux2,normal) ** (colors["shininess"] * 128) #(normal * (aux1/np.abs(GL.L + GL.v)))**(colors["shiness"]*128)
-                            
-                            #aux3 =  [normal * x for x in aux2]
+                            aux1 = np.add(np.array(GL.L), np.array(GL.v))
+                            print("aux1", aux1)
+                            #aux1 =[x+y for x,y in zip(GL.L, GL.v)] # (L+v)
+                            # aux2 = [x/np.abs(x) for x in aux1]     #L+V / |L+V|
+                            aux2 = np.divide(np.array(aux1), np.abs(aux1))
+                            print("AUX2", aux2)
+                            aux3 = -1  * np.dot(aux2,normal) ** (colors["shininess"] * 128) #(normal * (aux1/np.abs(GL.L + GL.v)))**(colors["shiness"]*128)
+                            print("Aux3", aux3)
                             specular_i = [x * GL.Ii * aux3 for x in colors["specularColor"]]
                             aux_irgb = [x + y + z for x, y, z in zip(ambient_i, diffuse_i, specular_i)]
-                            aux_list = [x[0][0] for x in aux_irgb]
-                            aux2_irgb = np.cross(GL.Ilrgb, aux_list)
+                            aux2_irgb = np.cross(GL.Ilrgb, aux_irgb)
                             i_rgb = [x + y for x, y in zip(aux2_irgb, colors["emissiveColor"])]
                             colors_final = [x * 255 for x in i_rgb]
                             for i in range(len(colors_final)):
@@ -774,10 +780,9 @@ class GL:
         GL.Ilrgb = color
         GL.Ii = intensity
         GL.Iia = ambientIntensity
-        GL.L = direction*(-1)
         GL.L = [x * (-1) for x in direction]
         GL.light = True
-        GL.v = np.matrix([0,0,1])
+        GL.v = [0,0,1]
 
         
 
