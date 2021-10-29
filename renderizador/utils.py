@@ -56,3 +56,7 @@ def getRotationMatrix(rotation):
         ])
     return rotation_matrix
 
+def calc_T(a, b):
+    T_minus_1_sub = np.subtract(a,b)
+    T_minus_1 = [x / 2 for x in T_minus_1_sub]
+    return T_minus_1
